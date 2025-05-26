@@ -36,20 +36,12 @@ app.use('/public/gallery', express.static(path.join(__dirname, 'public/gallery')
 app.use('/public/service', express.static(path.join(__dirname, 'public/service')));
 app.use('/public/defult', express.static(path.join(__dirname, 'public/defult')));
 
-// MongoDB connection
-const dbConfig = require('./config/dbconfig');
-
+// MongoDB connection d
 mongoose.Promise = global.Promise;
 
-mongoose.connect(dbConfig.url, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-}).then(() => {
-  console.log("✅ Database Connected Successfully!");
-}).catch(err => {
-  console.error("❌ Could not connect to the database:", err);
-  process.exit();
-});
+const connectDB = require('./config/dbconfig');
+connectDB();
+
 
 // Default Route
 app.get('/', (req, res) => {
