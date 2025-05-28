@@ -1,5 +1,6 @@
 const Enquiry = require("../models/enquiry");
 const cron = require('node-cron');
+const { sendWelcomeEmail } = require("../helpers/sendEmail"); // ⬅️ Add this line
 
 // Create Enquiry
 exports.CreateEnquiryController = async (req, res) => {
@@ -61,6 +62,8 @@ exports.CreateEnquiryController = async (req, res) => {
       updatedBy: 'admin',
       isDeleted: false
     }).save();
+
+    await sendWelcomeEmail(email, `${fName} ${lName}`);
 
     res.status(201).send({
       success: true,

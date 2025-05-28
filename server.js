@@ -8,11 +8,11 @@ const path = require("path");
 const dotenv = require("dotenv").config();
 
 const app = express();
-const port = process.env.PORT || 3000;
+const port = process.env.PORT || 5050;
 
 // Enable CORS
 app.use(cors({
-  origin: "http://localhost:8000"
+  origin: "http://localhost:3000"
 }));
 
 // Middleware
@@ -62,6 +62,7 @@ app.use('/followUp', require('./app/routes/followUp'));
 app.use('/countries', require('./app/routes/countryRoutes'));
 app.use('/courses', require('./app/routes/courseRoutes'));
 app.use('/college', require('./app/routes/collegeRouter'));
+app.use('/intake', require('./app/routes/intakeRoutes'));
 
 
 
