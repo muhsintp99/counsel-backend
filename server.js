@@ -29,12 +29,12 @@ const limiter = rateLimit({
 app.use("/", limiter);
 
 // Serve static files
-app.use('public/users', express.static(path.join(__dirname, 'public/uploads')));
-app.use('public/Images', express.static(path.join(__dirname, 'public/Images')));
-app.use('public/blog', express.static(path.join(__dirname, 'public/blog')));
-app.use('public/gallery', express.static(path.join(__dirname, 'public/gallery')));
-app.use('public/service', express.static(path.join(__dirname, 'public/service')));
-app.use('public/defult', express.static(path.join(__dirname, 'public/defult')));
+app.use('/public/users', express.static(path.join(__dirname, 'public/uploads')));
+app.use('/public/Images', express.static(path.join(__dirname, 'public/Images')));
+app.use('/public/blog', express.static(path.join(__dirname, 'public/blog')));
+app.use('/public/gallery', express.static(path.join(__dirname, 'public/gallery')));
+app.use('/public/service', express.static(path.join(__dirname, 'public/service')));
+app.use('/public/defult', express.static(path.join(__dirname, 'public/defult')));
 
 // MongoDB connection d
 mongoose.Promise = global.Promise;

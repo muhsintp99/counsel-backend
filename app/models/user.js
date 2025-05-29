@@ -30,7 +30,7 @@ const UserSchema = new Schema({
   },
   picture: { 
     type: String,
-    default: 'public/defult/user.png'
+    default: '/public/defult/user.png'
   },
   userType: {
     type: String,

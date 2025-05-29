@@ -16,7 +16,7 @@ const blogSchema = new mongoose.Schema({
     image: {
         type: String,
         required: true,
-        default: 'public/default/picture.png'
+        default: '/public/default/picture.png'
     },
     link: {
         type: String,
