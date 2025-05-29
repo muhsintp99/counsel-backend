@@ -34,7 +34,7 @@ const courseSchema = new mongoose.Schema({
   },
   image: {
     type: String,
-    default: '/public/defult/folder.png'
+    default: 'public/defult/folder.png'
   },
   syllabus: {
     type: [String],

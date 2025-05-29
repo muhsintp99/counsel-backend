@@ -66,6 +66,7 @@ exports.CreateUserController = async (req, res) => {
       mobile,
       password: hashedPassword,
       userType,
+      picture,
       status: 'new',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -158,6 +159,7 @@ exports.loginController = async (req, res) => {
         fname: user.fname,
         lname: user.lname,
         mobile: user.mobile,
+        picture: user.picture,
         email: user.email,
         userType: user.userType,
         status: user.status
