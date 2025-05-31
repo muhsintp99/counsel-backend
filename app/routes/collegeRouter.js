@@ -23,5 +23,6 @@ router.put('/:id', (req, res, next) => {
 }, collegeController.updateCollege);
 
 router.patch('/:id', collegeController.softDeleteCollege);
+router.delete('/:id', collegeController.deleteCollege);
 
 module.exports = router;

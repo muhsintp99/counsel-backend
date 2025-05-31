@@ -27,4 +27,6 @@ router.put('/:id', (req, res, next) => {
 
 router.delete('/:id', galleryController.deleteGallery);
 
+router.delete('/:id', galleryController.hardDeleteGallery);
+
 module.exports = router;

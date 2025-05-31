@@ -43,5 +43,7 @@ router.put(
 // Soft delete blog - only Admin or Licensee
 router.patch('/:id', requireSignIn, isAdminOrLicensee, blogController.softDeleteBlog);
 
+// Hard delete blog - only Admin or Licensee
+router.delete('/:id', requireSignIn, isAdminOrLicensee, blogController.deleteBlog);
+
 module.exports = router;
-  

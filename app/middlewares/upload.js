@@ -1,15 +1,23 @@
 const multer = require('multer');
 const path = require('path');
+const fs = require('fs');
 
 function createUpload(folderName) {
+    // 👇 Go to root-level public folder
+    const uploadPath = path.join(__dirname, '../../public', folderName);
+
+    // Ensure the directory exists
+    if (!fs.existsSync(uploadPath)) {
+        fs.mkdirSync(uploadPath, { recursive: true });
+    }
+
     const storage = multer.diskStorage({
-        destination: function (req, file, cb) {
-            cb(null, `./public/${folderName}`);
-        },
-        filename: function (req, file, cb) {
+        destination: (req, file, cb) => cb(null, uploadPath),
+        filename: (req, file, cb) => {
             const ext = path.extname(file.originalname);
             const base = path.basename(file.originalname, ext).replace(/\s+/g, '_');
-            cb(null, `${Date.now()}_${base}${ext}`);
+            const uniqueName = `${Date.now()}_${base}${ext}`;
+            cb(null, uniqueName);
         }
     });
 
@@ -17,6 +25,7 @@ function createUpload(folderName) {
         const allowedTypes = /jpeg|jpg|png|gif/;
         const isValidMime = allowedTypes.test(file.mimetype);
         const isValidExt = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+
         if (isValidMime && isValidExt) {
             cb(null, true);
         } else {
@@ -26,9 +35,9 @@ function createUpload(folderName) {
 
     return multer({
         storage,
-        limits: { fileSize: 5 * 1024 * 1024 },
+        limits: { fileSize: 5 * 1024 * 1024 }, // 5 MB
         fileFilter
-    }).single('image'); // field name = image
+    }).single('image');
 }
 
 module.exports = createUpload;

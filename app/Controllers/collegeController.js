@@ -111,3 +111,18 @@ exports.softDeleteCollege = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+exports.deleteCollege = async (req, res) => {
+  try {
+    const deleted = await College.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).json({ message: "College not found" });
+    }
+
+    res.json({ message: 'College permanently deleted', data: deleted });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+

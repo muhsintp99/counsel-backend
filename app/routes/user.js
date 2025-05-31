@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
-const UserController = require('../Controllers/user'); 
+const UserController = require('../Controllers/user');
 const { requireSignIn, isAdmin, isLicensee, isSelfOrAdmin } = require("../middlewares/authMiddleware");
+
+const createUpload = require('../middlewares/upload');
+const uploadUsersImage = createUpload('users');
 
 /**
  * @route POST /users
@@ -10,37 +13,44 @@ const { requireSignIn, isAdmin, isLicensee, isSelfOrAdmin } = require("../middle
  * - Otherwise public
  * @access Public for normal users, Admin for licensee
  */
-router.post('/', async (req, res, next) => {
-  try {
-    const { userType } = req.body;
+router.post('/',
+  (req, res, next) => {
+    uploadUsersImage(req, res, err => {
+      if (err) return res.status(400).json({ error: err.message });
+      next();
+    });
+  },
+  async (req, res, next) => {
+    try {
+      const { userType } = req.body;
 
-    if (userType === 'licensee') {
-      return requireSignIn(req, res, (err) => {
-        if (err) return next(err);
-        
-        if (!req.user) {
-          return res.status(401).json({
-            success: false,
-            message: "Authentication required to create licensee users",
-          });
-        }
+      if (userType === 'licensee') {
+        return requireSignIn(req, res, (err) => {
+          if (err) return next(err);
 
-        if (req.user.userType !== 'admin') {
-          return res.status(403).json({
-            success: false,
-            message: "Only admins can create licensee users",
-          });
-        }
+          if (!req.user) {
+            return res.status(401).json({
+              success: false,
+              message: "Authentication required to create licensee users",
+            });
+          }
 
+          if (req.user.userType !== 'admin') {
+            return res.status(403).json({
+              success: false,
+              message: "Only admins can create licensee users",
+            });
+          }
+
+          UserController.CreateUserController(req, res, next);
+        });
+      } else {
         UserController.CreateUserController(req, res, next);
-      });
-    } else {
-      UserController.CreateUserController(req, res, next);
+      }
+    } catch (error) {
+      next(error);
     }
-  } catch (error) {
-    next(error);
-  }
-});
+  });
 
 router.post('/create-licensee', requireSignIn, isAdmin, UserController.CreateUserController);
 
@@ -108,7 +118,14 @@ router.get('/:id', requireSignIn, isSelfOrAdmin, UserController.GetSingleUserCon
  * @desc Update user
  * @access Private (Self or Admin)
  */
-router.put('/:id', requireSignIn, isSelfOrAdmin, UserController.UpdateUserController);
+router.put('/:id',
+  (req, res, next) => {
+    uploadUsersImage(req, res, err => {
+      if (err) return res.status(400).json({ error: err.message });
+      next();
+    });
+  },
+  requireSignIn, isSelfOrAdmin, UserController.UpdateUserController);
 
 // Soft delete
 router.patch('/:id/delete', requireSignIn, isAdmin, UserController.softDelete);

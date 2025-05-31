@@ -28,7 +28,7 @@ const UserSchema = new Schema({
     required: [true, "Password is required"],
     minlength: 6
   },
-  picture: { 
+  image: { 
     type: String,
     default: '/public/defult/user.png'
   },

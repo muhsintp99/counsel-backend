@@ -94,3 +94,18 @@ exports.deleteGallery = async (req, res) => {
         res.status(500).json({ message: "Error deleting gallery item", error });
     }
 };
+
+// HARD DELETE
+exports.hardDeleteGallery = async (req, res) => {
+    try {
+        const deleted = await Gallery.findByIdAndDelete(req.params.id);
+
+        if (!deleted) {
+            return res.status(404).json({ message: "Gallery item not found" });
+        }
+
+        res.json({ message: "Gallery item permanently deleted", data: deleted });
+    } catch (error) {
+        res.status(500).json({ message: "Error permanently deleting gallery item", error });
+    }
+};

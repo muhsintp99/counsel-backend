@@ -1,18 +1,40 @@
 const express = require('express');
 const router = express.Router();
 const courseController = require('../Controllers/courseController');
+const createUpload = require('../middlewares/upload');
+const { requireSignIn, isAdminOrLicensee } = require('../middlewares/authMiddleware');
+
+const uploadCoursesImage = createUpload('courses');
 
 // Create
-router.post('/', courseController.createCourse);
+router.post('/',
+    requireSignIn,
+    isAdminOrLicensee,
+    (req, res, next) => {
+        uploadCoursesImage(req, res, err => {
+            if (err) return res.status(400).json({ error: err.message });
+            next();
+        });
+    },
+    courseController.createCourse);
 
 // Read
 router.get('/', courseController.getAllCourses);
 router.get('/:id', courseController.getCourseById);
 
 // Update
-router.put('/:id', courseController.updateCourse);
+router.put('/:id',
+    requireSignIn,
+    isAdminOrLicensee,
+    (req, res, next) => {
+        uploadCoursesImage(req, res, err => {
+            if (err) return res.status(400).json({ error: err.message });
+            next();
+        });
+    },
+    courseController.updateCourse);
 
 // Delete (soft)
-router.delete('/:id', courseController.deleteCourse);
+router.delete('/:id',requireSignIn,isAdminOrLicensee, courseController.deleteCourse);
 
 module.exports = router;

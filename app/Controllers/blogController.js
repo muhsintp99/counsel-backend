@@ -66,3 +66,14 @@ exports.softDeleteBlog = async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 };
+
+// Hard delete
+exports.deleteBlog = async (req, res) => {
+  try {
+    const deleted = await Blog.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ message: 'Blog not found' });
+    res.json({ message: 'Blog permanently deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};

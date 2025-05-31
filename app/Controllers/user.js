@@ -6,6 +6,7 @@ const JWT = require('jsonwebtoken');
 exports.CreateUserController = async (req, res) => {
   try {
     const { fname, lname, email, mobile, password, userType } = req.body;
+    const image = req.file ? `/public/users/${req.file.filename}` : null;
 
     // Input validation
     if (!fname) {
@@ -66,7 +67,7 @@ exports.CreateUserController = async (req, res) => {
       mobile,
       password: hashedPassword,
       userType,
-      picture,
+      image,
       status: 'new',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -159,7 +160,7 @@ exports.loginController = async (req, res) => {
         fname: user.fname,
         lname: user.lname,
         mobile: user.mobile,
-        picture: user.picture,
+        image: user.image,
         email: user.email,
         userType: user.userType,
         status: user.status
@@ -279,59 +280,61 @@ exports.currentUserController = async (req, res) => {
 exports.UpdateUserController = async (req, res) => {
   try {
     const { id } = req.params;
-    const updatedData = req.body;
+    const image = req.file ? `/public/users/${req.file.filename}` : null; // Use correct path
+    const updatedData = { ...req.body };
 
-    // Don't allow changing userType or password through this endpoint
-    if (updatedData.password) {
-      delete updatedData.password;
+    // Prevent sensitive fields from being updated
+    delete updatedData.password;
+    delete updatedData.userType;
+
+    if (image) {
+      updatedData.image = image;
     }
-    if (updatedData.userType) {
-      delete updatedData.userType; // Prevent userType changes
-    }
 
-    updatedData.updatedAt = new Date().toISOString();
-    updatedData.updatedBy = req.user ? req.user._id : 'system';
+    updatedData.updatedAt = new Date();
+    updatedData.updatedBy = req.user?._id || 'system';
 
+    // Find the user first
     const user = await User.findById(id);
     if (!user) {
-      return res.status(404).send({
+      return res.status(404).json({
         success: false,
-        message: "User not found"
+        message: 'User not found',
       });
     }
 
+    // Prevent updates to deleted users
     if (user.isDeleted) {
-      return res.status(403).send({
+      return res.status(403).json({
         success: false,
-        message: 'Cannot update deactivated account'
+        message: 'Cannot update deactivated account',
       });
     }
 
-    // Authorization is handled by isSelfOrAdmin middleware
-
-    const updatedUser = await User.findByIdAndUpdate(
-      id,
-      updatedData,
-      { new: true, runValidators: true }
-    );
+    // Perform the update
+    const updatedUser = await User.findByIdAndUpdate(id, updatedData, {
+      new: true,
+      runValidators: true,
+    });
 
     const userResponse = updatedUser.toObject();
     delete userResponse.password;
 
-    res.status(200).send({
+    res.status(200).json({
       success: true,
-      message: "Successfully updated the user",
-      user: userResponse
+      message: 'Successfully updated the user',
+      user: userResponse,
     });
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
+    console.error('Update User Error:', error);
+    res.status(500).json({
       success: false,
-      message: "Error in updating the user",
-      error: error.message
+      message: 'Error in updating the user',
+      error: error.message,
     });
   }
 };
+
 
 // Get all users (both deleted and active)
 exports.GetAllUsersController = async (req, res) => {

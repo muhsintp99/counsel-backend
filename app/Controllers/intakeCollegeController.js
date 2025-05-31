@@ -86,6 +86,19 @@ export const deleteIntake = async (req, res) => {
   }
 };
 
+//hard delete intake
+export const hardDeleteIntake = async (req, res) => {
+  try {
+    const intake = await IntakeCollege.findByIdAndDelete(req.params.id);
+
+    if (!intake) return res.status(404).json({ message: 'Intake not found' });
+
+    res.json({ message: 'Intake permanently deleted' });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // @desc    Count of active intakes
 export const getIntakeCount = async (req, res) => {
   try {

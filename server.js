@@ -7,12 +7,19 @@ const mongoose = require("mongoose");
 const path = require("path");
 const dotenv = require("dotenv").config();
 
+// Database connection
+const connectDB = require('./config/dbconfig');
+const seedDefaultIndiaCountry = require('./app/helpers/insertIndia');
+
+connectDB().then(() => seedDefaultIndiaCountry());
+
 const app = express();
 const port = process.env.PORT || 5050;
 
-// Enable CORS
+// CORS Setup
 app.use(cors({
-  origin: "http://localhost:4040"
+  origin: "http://localhost:4040", // Change for production
+  credentials: true
 }));
 
 // Middleware
@@ -20,52 +27,39 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(bodyParser.json());
 app.use(cookieParser());
 
-// Rate Limiter
-const limiter = rateLimit({
+// Rate Limiting
+app.use(rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
-  max: 1000, // Limit each IP to 1000 requests per hour
+  max: 1000,
   message: "Too many requests from this IP, please try again in an hour"
+}));
+
+// Static file serving
+const staticFolders = [
+  'defult', 'users', 'Images', 'blog', 'gallery',
+  'service', 'college', 'courses', 'country'
+];
+
+staticFolders.forEach(folder => {
+  app.use(`/public/${folder}`, express.static(path.join(__dirname, `public/${folder}`)));
 });
-app.use("/", limiter);
 
-// Serve static files
-app.use('/public/users', express.static(path.join(__dirname, 'public/uploads')));
-app.use('/public/Images', express.static(path.join(__dirname, 'public/Images')));
-app.use('/public/blog', express.static(path.join(__dirname, 'public/blog')));
-app.use('/public/gallery', express.static(path.join(__dirname, 'public/gallery')));
-app.use('/public/service', express.static(path.join(__dirname, 'public/service')));
-app.use('/public/defult', express.static(path.join(__dirname, 'public/defult')));
-
-// MongoDB connection d
-mongoose.Promise = global.Promise;
-
-const connectDB = require('./config/dbconfig');
-connectDB();
-
-
-// Default Route
+// Default route
 app.get('/', (req, res) => {
   res.json({ message: "Hello, Server Started" });
 });
 
-// Import & Use Routes
+// Routes
 app.use('/users', require('./app/routes/user'));
-
 app.use('/blog', require('./app/routes/blogRouter'));
 app.use('/services', require('./app/routes/serviceRoutes'));
 app.use('/gallery', require('./app/routes/galleryRoutes'));
-
 app.use('/enquiries', require('./app/routes/enquiry'));
 app.use('/followUp', require('./app/routes/followUp'));
-
-
 app.use('/countries', require('./app/routes/countryRoutes'));
 app.use('/courses', require('./app/routes/courseRoutes'));
 app.use('/college', require('./app/routes/collegeRouter'));
 app.use('/intake', require('./app/routes/intakeRoutes'));
-
-
-
 app.use('/userProfile', require('./app/routes/userProfile'));
 app.use('/userroles', require('./app/routes/userRole'));
 app.use('/orgType', require('./app/routes/orgType'));
@@ -74,14 +68,13 @@ app.use('/productService', require('./app/routes/productServices'));
 app.use('/supportType', require('./app/routes/supportType'));
 app.use('/orgProfile', require('./app/routes/orgProfile'));
 
-
-// Uncomment if you plan to use these routes later
+// Optional routes (uncomment when needed)
 // app.use("/support", require('./app/routes/enquirySupport'));
 // app.use("/enquirySource", require('./app/routes/enquirySource'));
 // app.use("/enquirymode", require('./app/routes/enquiryMode'));
 // app.use("/enquiryType", require('./app/routes/enquiryType'));
 
-// Start Server
+// Server start
 app.listen(port, () => {
   console.log(`🚀 Server is running on port ${port}`);
 });
