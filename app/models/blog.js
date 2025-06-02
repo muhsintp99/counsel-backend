@@ -36,4 +36,8 @@ const blogSchema = new mongoose.Schema({
     updatedBy: { type: String, default: 'admin' }
 }, { timestamps: true });
 
+blogSchema.index({createdAt: 1});
+blogSchema.index({ isDeleted: 1 });
+
+
 module.exports = mongoose.model('Blog', blogSchema);

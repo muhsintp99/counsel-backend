@@ -4,14 +4,14 @@ const serviceSchema = new mongoose.Schema({
     title: {
         type: String,
         required: true,
-        unique: true
     },
     shortDesc: {
         type: String,
         required: true
     },
     fullDesc: {
-        type: String
+        type: String,
+        required: true
     },
     image: {
         type: String
@@ -19,7 +19,7 @@ const serviceSchema = new mongoose.Schema({
 
     points: [
         {
-            title: { type: String},
+            title: { type: String },
             description: { type: String }
         }
     ],
@@ -37,7 +37,11 @@ const serviceSchema = new mongoose.Schema({
         default: 'admin'
     }
 },
- { timestamps: true });
+    { timestamps: true }
+);
+
+serviceSchema.index({createdAt: 1});
+serviceSchema.index({ isDeleted: 1 });
 
 const Service = mongoose.model('Service', serviceSchema);
 module.exports = Service;

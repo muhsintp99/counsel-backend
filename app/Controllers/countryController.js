@@ -101,6 +101,16 @@ exports.updateCountry = async (req, res) => {
 };
 
 
+// Get total country count (excluding deleted)
+exports.getCountryCount = async (req, res) => {
+  try {
+    const total = await Country.countDocuments({ isDeleted: false });
+    res.json({ success: true, total });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 // Hard delete country
 exports.deleteCountry = async (req, res) => {
   try {

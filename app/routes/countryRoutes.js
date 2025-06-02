@@ -12,9 +12,12 @@ router.post('/', (req, res, next) => {
         if (err) return res.status(400).json({ error: err.message });
         next();
     });
-}, requireSignIn,isAdminOrLicensee, countryController.createCountry);
+}, requireSignIn, countryController.createCountry);
 
 router.get('/', countryController.getAllCountries);
+
+router.get('/count', countryController.getCountryCount); // ✅ Add this before '/:id'
+
 
 router.get('/:id', countryController.getCountryById);
 

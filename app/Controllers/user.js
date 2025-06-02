@@ -100,7 +100,6 @@ exports.loginController = async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    // Validation
     if (!email || !password) {
       return res.status(400).send({
         success: false,
@@ -108,7 +107,6 @@ exports.loginController = async (req, res) => {
       });
     }
 
-    // Check user
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).send({
@@ -117,7 +115,6 @@ exports.loginController = async (req, res) => {
       });
     }
 
-    // Check if user is deleted
     if (user.isDeleted) {
       return res.status(403).send({
         success: false,
@@ -125,7 +122,6 @@ exports.loginController = async (req, res) => {
       });
     }
 
-    // Compare password
     const match = await comparePassword(password, user.password);
     if (!match) {
       return res.status(401).send({
@@ -134,13 +130,11 @@ exports.loginController = async (req, res) => {
       });
     }
 
-    // Update last login
     await User.findByIdAndUpdate(user._id, {
       lastLogin: new Date(),
       ftLogin: false
     });
 
-    // Generate token - include userType in the payload for middleware
     const token = JWT.sign(
       {
         _id: user._id,
@@ -151,7 +145,6 @@ exports.loginController = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    // Send response without sensitive data
     res.status(200).send({
       success: true,
       message: 'Login successful',
@@ -176,6 +169,10 @@ exports.loginController = async (req, res) => {
     });
   }
 };
+
+
+
+
 
 // FORGOT PASSWORD
 exports.forgotPasswordController = async (req, res) => {
