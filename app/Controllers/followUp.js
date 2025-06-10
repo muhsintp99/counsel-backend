@@ -21,21 +21,21 @@ exports.CreateFollowUp = async (req, res) => {
         message: "Invalid Enquiry ID provided",
       });
     }
- /*   const parsedNextContactDate = new Date(nextContactDate);
-
-    if (isNaN(parsedNextContactDate.getTime())) {
-      return res.status(400).send({
-        success: false,
-        message: "Invalid nextContactDate provided",
-      });
-    }
-*/
+    /*   const parsedNextContactDate = new Date(nextContactDate);
+   
+       if (isNaN(parsedNextContactDate.getTime())) {
+         return res.status(400).send({
+           success: false,
+           message: "Invalid nextContactDate provided",
+         });
+       }
+   */
 
     const followUp = await new FollowUp({
       enqId,
       followUpDetails,
-      nextContactDate  ,
-      status :"new",
+      nextContactDate,
+      status: "new",
       remarks,
       createdBy: 'admin',
       updatedBy: 'admin',
@@ -45,7 +45,7 @@ exports.CreateFollowUp = async (req, res) => {
     res.status(201).send({
       success: true,
       message: "Successfully created a follow-up",
-      followUp 
+      followUp
     });
   } catch (error) {
     console.log(error);
@@ -60,8 +60,8 @@ exports.CreateFollowUp = async (req, res) => {
 // Get all FollowUps
 exports.GetAllFollowUps = async (req, res) => {
   try {
-    const followUp = await FollowUp.find({isDeleted:false}).sort({ createdAt: -1 })
-      .populate('enqId'); 
+    const followUp = await FollowUp.find({ isDeleted: false }).sort({ createdAt: -1 })
+      .populate('enqId');
 
 
 
@@ -69,7 +69,7 @@ exports.GetAllFollowUps = async (req, res) => {
       success: true,
       message: "All follow-ups",
       followUp
-      
+
     });
   } catch (error) {
     console.log(error);
@@ -94,7 +94,7 @@ exports.GetSingleFollowUp = async (req, res) => {
     }
 
     const followUp = await FollowUp.findById(id)
-      .populate('enqId');  
+      .populate('enqId');
 
     if (!followUp) {
       return res.status(404).send({
@@ -102,12 +102,12 @@ exports.GetSingleFollowUp = async (req, res) => {
         message: "Follow-up not found",
       });
     }
-    
+
 
     res.status(200).send({
       success: true,
       message: "Getting single follow-up successfully",
-      followUp 
+      followUp
     });
   } catch (error) {
     console.log(error);
@@ -134,12 +134,12 @@ exports.GetAllFollowUpsForEnquiry = async (req, res) => {
     const followUp = await FollowUp.find({ enqId: enquiryId })
       .sort({ createdAt: -1 });
 
-    
+
 
     res.status(200).send({
       success: true,
       message: "All follow-ups for the Enquiry",
-      followUp 
+      followUp
     });
   } catch (error) {
     console.log(error);
@@ -193,7 +193,7 @@ exports.softDeleteFollowUp = async (req, res) => {
       id,
       { isDeleted: true, updatedAt: Date.now() },
       { new: true, runValidators: true }
-    ).populate('enqId'); 
+    ).populate('enqId');
     if (!followUp) {
       return res.status(404).send({
         success: false,
@@ -205,6 +205,33 @@ exports.softDeleteFollowUp = async (req, res) => {
       success: true,
       message: 'Successfully soft-deleted the follow-up',
       followUp,
+    });
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: 'Error in soft-deleting the follow-up',
+      error,
+    });
+  }
+};
+
+
+exports.deleteFollowUp = async (req, res) => {
+  try {
+    const deleted = await FollowUp.findByIdAndDelete(req.params.id);
+
+    if (!deleted) {
+      return res.status(404).send({
+        success: false,
+        message: 'Follow-up not found',
+      });
+    }
+
+    res.status(200).send({
+      success: true,
+      message: 'Successfully soft-deleted the follow-up',
+      deleted,
     });
   } catch (error) {
     console.log(error);

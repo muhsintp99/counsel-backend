@@ -7,7 +7,6 @@ exports.CreateEnquiryController = async (req, res) => {
   try {
     const {
       fName,
-      lName,
       email,
       mobile,
       location,
@@ -15,12 +14,12 @@ exports.CreateEnquiryController = async (req, res) => {
       school,
       leadQuality,
       enqTo,
+      enqDescp,
       referenceId,
       remarks,
-      enqDescp,
     } = req.body;
 
-    if (!enqDescp || !fName || !lName || !email || !mobile || !location) {
+    if (!enqDescp || !fName || !email || !mobile || !location) {
       return res.status(400).send({ message: "All required fields must be provided" });
     }
 
@@ -45,7 +44,6 @@ exports.CreateEnquiryController = async (req, res) => {
       enqNo: newEnqNo,
       enqDescp,
       fName,
-      lName,
       email,
       mobile,
       location,
@@ -63,7 +61,7 @@ exports.CreateEnquiryController = async (req, res) => {
       isDeleted: false
     }).save();
 
-    await sendWelcomeEmail(email, `${fName} ${lName}`);
+    await sendWelcomeEmail(email, `${fName}`);
 
     res.status(201).send({
       success: true,
@@ -121,13 +119,12 @@ cron.schedule('0 * * * *', () => {
 // Get all Enquiries
 exports.GetAllEnquiriesController = async (req, res) => {
   try {
-    const { page = 1, pageSize = 5 } = req.query;
-    const skip = (page - 1) * pageSize;
-
     const enquiry = await Enquiry.find({ isDeleted: false })
+      .populate('school', 'name')
+      .populate('course', 'title')
       .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(pageSize);
+
+    const total = await Enquiry.countDocuments({ isDeleted: false });
 
     const formattedEnquiries = enquiry.map((enq) => ({
       ...enq.toObject(),
@@ -137,6 +134,7 @@ exports.GetAllEnquiriesController = async (req, res) => {
     res.status(200).send({
       success: true,
       message: "All enquiries",
+      count: total,
       enquiry: formattedEnquiries,
     });
   } catch (error) {
@@ -238,7 +236,7 @@ exports.softDelete = async (req, res) => {
 // Enquiry count
 exports.enquiryCount = async (req, res) => {
   try {
-    const enquiry = await Enquiry.find({}).countDocuments();
+    const enquiry = await Enquiry.countDocuments();
     res.status(200).send({
       success: true,
       enquiry

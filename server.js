@@ -67,6 +67,7 @@ app.use('/orgCategory', require('./app/routes/orgCategory'));
 app.use('/productService', require('./app/routes/productServices'));
 app.use('/supportType', require('./app/routes/supportType'));
 app.use('/orgProfile', require('./app/routes/orgProfile'));
+app.use('/contact', require('./app/routes/contactRoutes'));
 
 // Optional routes (uncomment when needed)
 // app.use("/support", require('./app/routes/enquirySupport'));

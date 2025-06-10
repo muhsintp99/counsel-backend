@@ -1,3 +1,4 @@
+// courseRoutes.js (no changes needed)
 const express = require('express');
 const router = express.Router();
 const courseController = require('../Controllers/courseController');
@@ -34,7 +35,7 @@ router.put('/:id',
     },
     courseController.updateCourse);
 
-// Delete (soft)
-router.delete('/:id',requireSignIn,isAdminOrLicensee, courseController.deleteCourse);
+// Delete
+router.delete('/:id', requireSignIn, isAdminOrLicensee, courseController.deleteCourse);
 
 module.exports = router;

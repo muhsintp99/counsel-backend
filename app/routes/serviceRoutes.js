@@ -25,6 +25,7 @@ router.put('/:id', (req, res, next) => {
 }, serviceController.updateService);
 
 router.patch('/:id', serviceController.softDeleteService);
-router.delete('/:id', serviceController.deleteService);
+router.delete('/:id', serviceController.hardDeleteService);
+router.delete('/count', serviceController.totalServiceCount);
 
 module.exports = router;

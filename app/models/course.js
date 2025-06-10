@@ -1,3 +1,4 @@
+// course.js (no changes needed)
 const mongoose = require('mongoose');
 
 const courseSchema = new mongoose.Schema({
@@ -21,7 +22,14 @@ const courseSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    required: true
+    required: true,
+    validate: {
+      validator: function (value) {
+        const allowed = ['Graduate', 'Postgraduate', 'Diploma', "PhD", 'other'];
+        return allowed.includes(value) || value.trim() !== '';
+      },
+      message: 'Invalid category'
+    }
   },
   mode: {
     type: String,
@@ -34,7 +42,7 @@ const courseSchema = new mongoose.Schema({
   },
   image: {
     type: String,
-    default: '/public/defult/folder.png'
+    default: '/public/default/folder.png'
   },
   syllabus: {
     type: [String],
@@ -50,7 +58,7 @@ const courseSchema = new mongoose.Schema({
   },
   visible: {
     type: Boolean,
-    default: true // if false, course is hidden from public view
+    default: true
   },
   isDeleted: {
     type: Boolean,

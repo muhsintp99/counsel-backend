@@ -3,26 +3,26 @@ const moment = require('moment');
 
 const followUpSchema = new mongoose.Schema({
 
-enqId:{
+  enqId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Enquiry', 
-    required : true
-},
-
-followUpDetails:{
-  type: String, 
-},
-nextContactDate: {
-  type: String,
-  
-},
-status: {
-  type: String,
-  enum:['new','active','pending','blocked','converted']
+    ref: 'Enquiry',
+    required: true
   },
-remarks:{
-  type:String
-},
+
+  followUpDetails: {
+    type: String,
+  },
+  nextContactDate: {
+    type: Date,
+
+  },
+  status: {
+    type: String,
+    enum: ['new', 'active', 'pending', 'blocked', 'converted']
+  },
+  remarks: {
+    type: String
+  },
 
   createdAt: {
     type: Date,
@@ -32,22 +32,22 @@ remarks:{
     type: Date,
     default: Date.now,
   },
-  createdBy:{
+  createdBy: {
     type: String,
     required: true,
-    default:'admin'
+    default: 'admin'
 
-},
-    updatedBy:{
+  },
+  updatedBy: {
     type: String,
     required: true,
-    default:'admin'
-},
+    default: 'admin'
+  },
 
-isDeleted: {
-  type: Boolean,
-  default: false, 
-},
+  isDeleted: {
+    type: Boolean,
+    default: false,
+  },
 
 });
 

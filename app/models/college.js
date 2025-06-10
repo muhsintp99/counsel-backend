@@ -15,6 +15,7 @@ const collegeSchema = new mongoose.Schema({
     },
     email: {
         type: String,
+        required: true,
     },
     phone: {
         type: String,
@@ -23,6 +24,9 @@ const collegeSchema = new mongoose.Schema({
         type: String,
     },
     website: {
+        type: String,
+    },
+    desc: {
         type: String,
     },
     country: {
@@ -36,8 +40,8 @@ const collegeSchema = new mongoose.Schema({
     }],
     category: {
         type: String,
-        enum: ['undergraduate', 'graduate', 'diploma'],
-        default: 'undergraduate'
+        enum: ['Graduate', 'Postgraduate', 'Diploma', 'PhD'],
+        default: 'Graduate'
     },
     status: {
         type: String,
@@ -72,6 +76,12 @@ const collegeSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
+
+// Add indexes for better query performance
+collegeSchema.index({ code: 1 });
+collegeSchema.index({ country: 1 });
+collegeSchema.index({ isDeleted: 1 });
+collegeSchema.index({ visible: 1 });
 
 const College = mongoose.model('College', collegeSchema);
 module.exports = College;

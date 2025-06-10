@@ -20,5 +20,6 @@ router.put('/:id', followUpController.UpdateFollowUp);
 
 // Soft Delete a FollowUp by ID
 router.patch('/:id', followUpController.softDeleteFollowUp);
+router.delete('/:id', followUpController.deleteFollowUp);
 
 module.exports = router;

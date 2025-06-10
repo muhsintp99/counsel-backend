@@ -53,22 +53,40 @@ exports.updateService = async (req, res) => {
   }
 };
 
-// Soft delete
+// Soft delete service
 exports.softDeleteService = async (req, res) => {
   try {
-    const deleted = await Service.findByIdAndUpdate(req.params.id, { isDeleted: true }, { new: true });
-    res.json({ message: 'Service deleted', data: deleted });
+    const id = req.params.id;
+    const service = await Service.findByIdAndUpdate(
+      id,
+      { isDeleted: true, deletedAt: new Date() },
+      { new: true }
+    );
+    if (!service) return res.status(404).json({ message: 'Service not found' });
+    res.json({ message: 'Service soft deleted successfully', service });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
+
 // hard delete service
-exports.deleteService = async (req, res) => {
+exports.hardDeleteService = async (req, res) => {
   try {
-    const deleted = await Service.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ message: 'Service not found' });
-    res.json({ message: 'Service permanently deleted', data: deleted });
+    const id = req.params.id;
+    const deletedService = await Service.findByIdAndDelete(id);
+    if (!deletedService) return res.status(404).json({ message: 'Service not found' });
+    res.json({ message: 'Service permanently deleted' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Get total count of services
+exports.totalServiceCount = async (req, res) => {
+  try {
+    const count = await Service.countDocuments({ isDeleted: false });
+    res.json({ count });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

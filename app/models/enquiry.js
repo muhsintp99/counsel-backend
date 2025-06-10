@@ -1,4 +1,5 @@
 const mongoose = require('mongoose');
+const { create } = require('./blog');
 
 const enquirySchema = new mongoose.Schema({
   enqNo: {
@@ -13,9 +14,8 @@ const enquirySchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  lName: {
-    type: String,
-    required: true
+  enqDescp: {
+    type: String
   },
   email: {
     type: String,
@@ -31,11 +31,13 @@ const enquirySchema = new mongoose.Schema({
     required: true
   },
   course: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Course',
     required: true
   },
   school: {
-    type: String,
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'College',
     required: true
   },
   leadQuality: {
@@ -52,8 +54,9 @@ const enquirySchema = new mongoose.Schema({
   remarks: {
     type: String
   },
-  enqDescp: {
-    type: String
+  category: {
+    type: String,
+    enum: ['Postgraduate', 'Graduate', 'Diploma', 'PhD', 'other']
   },
   createdBy: {
     type: String,
@@ -68,8 +71,12 @@ const enquirySchema = new mongoose.Schema({
     default: false
   }
 }, {
-  timestamps: true // Handles createdAt and updatedAt automatically
+  timestamps: true
 });
 
+enquirySchema.index({ createdAt: 1 });
+enquirySchema.index({ isDeleted: 1 });
+
 const Enquiry = mongoose.model('Enquiry', enquirySchema);
+
 module.exports = Enquiry;
