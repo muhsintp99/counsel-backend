@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+const mongoose = require('mongoose');
 
 const intakeSchema = new mongoose.Schema(
   {
@@ -61,4 +61,6 @@ const intakeSchema = new mongoose.Schema(
 intakeSchema.index({ createdAt: 1 });
 intakeSchema.index({ isDeleted: 1 });
 
-export default mongoose.model('IntakeCollege', intakeSchema);
+const IntakeCollege = mongoose.model('IntakeCollege', intakeSchema);
+
+module.exports = IntakeCollege;
