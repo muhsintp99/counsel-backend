@@ -17,10 +17,16 @@ const app = express();
 const port = process.env.PORT || 5050;
 
 // CORS Setup
+// app.use(cors({
+//   origin: "http://localhost:4040", // Change for production
+//   credentials: true
+// }));
+
 app.use(cors({
-  origin: "http://localhost:4040", // Change for production
+  origin: ["http://localhost:4040", "http://127.0.0.1:5503"],
   credentials: true
 }));
+
 
 // Middleware
 app.use(bodyParser.urlencoded({ extended: true }));
