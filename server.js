@@ -111,6 +111,7 @@ app.set('trust proxy', 1);
 // ✅ Safe CORS: support both local & production
 const allowedOrigins = [
   "http://localhost:4040",
+  "https://counsel-frontend-4mh3.vercel.app/",
   "http://127.0.0.1:5503",
 ];
 
