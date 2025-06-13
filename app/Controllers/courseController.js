@@ -4,7 +4,9 @@ const Course = require('../models/course');
 // Create new course
 exports.createCourse = async (req, res) => {
   try {
-    const image = req.file ? `/public/courses/${req.file.filename}` : null;
+    // const image = req.file ? `/public/courses/${req.file.filename}` : null;
+    const image = req.file ? req.file.path : null;
+
 
     const courseData = {
       ...req.body,
@@ -52,7 +54,9 @@ exports.getCourseById = async (req, res) => {
 // Update course
 exports.updateCourse = async (req, res) => {
   try {
-    const image = req.file ? `/public/courses/${req.file.filename}` : undefined;
+    // const image = req.file ? `/public/courses/${req.file.filename}` : undefined;
+    const image = req.file ? req.file.path : null;
+
 
     const updatedData = {
       ...req.body,

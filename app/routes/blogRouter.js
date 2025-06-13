@@ -1,7 +1,8 @@
 const express = require('express');
 const router = express.Router();
 const blogController = require('../Controllers/blogController');
-const createUpload = require('../middlewares/upload');
+// const createUpload = require('../middlewares/upload');
+const createUpload = require('../middlewares/cloudinaryUpload');
 const { requireSignIn, isAdminOrLicensee } = require('../middlewares/authMiddleware');
 
 const uploadBlogImage = createUpload('blog');

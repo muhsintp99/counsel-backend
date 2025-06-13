@@ -3,7 +3,9 @@ const router = express.Router();
 const UserController = require('../Controllers/user');
 const { requireSignIn, isAdmin, isLicensee, isSelfOrAdmin } = require("../middlewares/authMiddleware");
 
-const createUpload = require('../middlewares/upload');
+// const createUpload = require('../middlewares/upload');
+const createUpload = require('../middlewares/cloudinaryUpload');
+
 const uploadUsersImage = createUpload('users');
 
 /**

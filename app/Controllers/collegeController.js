@@ -20,12 +20,14 @@ const safeParseJSON = (value, defaultValue = []) => {
 exports.createCollege = async (req, res) => {
   try {
     const {
-      name, code, email, phone, address, website, desc, map, 
-      category, status, facilities, services, country, courses, 
+      name, code, email, phone, address, website, desc, map,
+      category, status, facilities, services, country, courses,
       visible, createdBy
     } = req.body;
 
-    const image = req.file ? `/public/college/${req.file.filename}` : null;
+    // const image = req.file ? `/public/college/${req.file.filename}` : null;
+    const image = req.file ? req.file.path : null;
+
 
     // Check if college code already exists
     const existingCollege = await College.findOne({ code, isDeleted: false });
@@ -55,7 +57,7 @@ exports.createCollege = async (req, res) => {
     });
 
     const saved = await newCollege.save();
-    
+
     // Populate the saved college before returning
     const populatedCollege = await College.findById(saved._id)
       .populate({
@@ -80,10 +82,10 @@ exports.createCollege = async (req, res) => {
 exports.getColleges = async (req, res) => {
   try {
     const { page = 1, limit = 10, search, category, status, country } = req.query;
-    
+
     // Build filter object
     const filter = { isDeleted: false };
-    
+
     if (search) {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -91,7 +93,7 @@ exports.getColleges = async (req, res) => {
         { desc: { $regex: search, $options: 'i' } }
       ];
     }
-    
+
     if (category) filter.category = category;
     if (status) filter.status = status;
     if (country) filter.country = country;
@@ -143,7 +145,7 @@ exports.getCollegeById = async (req, res) => {
     if (!college) {
       return res.status(404).json({ error: 'College not found' });
     }
-    
+
     res.json(college);
   } catch (err) {
     console.error('Get college by ID error:', err);
@@ -156,18 +158,20 @@ exports.updateCollege = async (req, res) => {
   try {
     const {
       name, code, email, phone, address, website, desc, map,
-      category, status, facilities, services, country, courses, 
+      category, status, facilities, services, country, courses,
       visible, updatedBy
     } = req.body;
 
-    const image = req.file ? `/public/college/${req.file.filename}` : undefined;
+    // const image = req.file ? `/public/college/${req.file.filename}` : undefined;
+    const image = req.file ? req.file.path : undefined;
+
 
     // Check if college code already exists (excluding current college)
     if (code) {
-      const existingCollege = await College.findOne({ 
-        code, 
-        isDeleted: false, 
-        _id: { $ne: req.params.id } 
+      const existingCollege = await College.findOne({
+        code,
+        isDeleted: false,
+        _id: { $ne: req.params.id }
       });
       if (existingCollege) {
         return res.status(400).json({ error: 'College code already exists' });
@@ -196,8 +200,8 @@ exports.updateCollege = async (req, res) => {
     if (image) updateData.image = image;
 
     const updated = await College.findByIdAndUpdate(
-      req.params.id, 
-      updateData, 
+      req.params.id,
+      updateData,
       { new: true, runValidators: true }
     ).populate({
       path: 'country',
@@ -224,15 +228,15 @@ exports.updateCollege = async (req, res) => {
 exports.softDeleteCollege = async (req, res) => {
   try {
     const deleted = await College.findByIdAndUpdate(
-      req.params.id, 
-      { isDeleted: true, updatedBy: req.body.updatedBy || 'admin' }, 
+      req.params.id,
+      { isDeleted: true, updatedBy: req.body.updatedBy || 'admin' },
       { new: true }
     );
-    
+
     if (!deleted) {
       return res.status(404).json({ error: 'College not found' });
     }
-    
+
     res.json({ message: 'College soft deleted successfully', data: deleted });
   } catch (err) {
     console.error('Soft delete college error:', err);

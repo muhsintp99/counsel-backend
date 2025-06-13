@@ -6,7 +6,9 @@ const JWT = require('jsonwebtoken');
 exports.CreateUserController = async (req, res) => {
   try {
     const { fname, lname, email, mobile, password, userType } = req.body;
-    const image = req.file ? `/public/users/${req.file.filename}` : null;
+    // const image = req.file ? `/public/users/${req.file.filename}` : null;
+    const image = req.file ? req.file.path : null;
+
 
     // Input validation
     if (!fname) {
@@ -277,7 +279,8 @@ exports.currentUserController = async (req, res) => {
 exports.UpdateUserController = async (req, res) => {
   try {
     const { id } = req.params;
-    const image = req.file ? `/public/users/${req.file.filename}` : null; // Use correct path
+    // const image = req.file ? `/public/users/${req.file.filename}` : null; // Use correct path
+    const image = req.file ? req.file.path : null;
     const updatedData = { ...req.body };
 
     // Prevent sensitive fields from being updated

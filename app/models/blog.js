@@ -21,12 +21,6 @@ const blogSchema = new mongoose.Schema({
     link: {
         type: String,
         unique: true,
-        // validate: {
-        //     validator: function (v) {
-        //         return /^(https?:\/\/)?([\w\-])+\.{1}([a-zA-Z]{2,63})([\/\w\-]*)*\/?$/.test(v);
-        //     },
-        //     message: props => `${props.value} is not a valid URL!`
-        // }
     },
     isDeleted: {
         type: Boolean,
@@ -37,7 +31,7 @@ const blogSchema = new mongoose.Schema({
 }, { timestamps: true });
 
 blogSchema.index({createdAt: 1});
-blogSchema.index({ isDeleted: 1 });
+// blogSchema.index({ isDeleted: 1 });
 
 
 module.exports = mongoose.model('Blog', blogSchema);

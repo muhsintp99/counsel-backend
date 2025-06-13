@@ -114,8 +114,10 @@ const Gallery = require('../models/gallery');
 // CREATE
 exports.createGallery = async (req, res) => {
     try {
-        const { title, from, link } = req.body;
-        const image = req.file ? `/public/gallery/${req.file.filename}` : null;
+        const { title, from, link, date } = req.body;
+        // const image = req.file ? `/public/gallery/${req.file.filename}` : null;
+        const image = req.file ? req.file.path : null;
+
 
         if (!image) return res.status(400).json({ error: "Image is required." });
 
@@ -123,6 +125,7 @@ exports.createGallery = async (req, res) => {
             image,
             title,
             from,
+            date: date ? new Date(date) : new Date(),
             link,
             createdBy: 'admin',
         });
@@ -166,8 +169,11 @@ exports.updateGallery = async (req, res) => {
         const { title, from, link } = req.body;
         const updateData = { title, from, link, updatedBy: 'admin' };
 
-        if (req.file?.filename) {
-            updateData.image = `/public/gallery/${req.file.filename}`; // Ensure path consistency
+        // if (req.file?.filename) {
+        //     updateData.image = `/public/gallery/${req.file.filename}`; // Ensure path consistency
+        // }
+        if (req.file?.path) {
+            updateData.image = req.file.path;
         }
 
         const updatedItem = await Gallery.findByIdAndUpdate(req.params.id, updateData, {

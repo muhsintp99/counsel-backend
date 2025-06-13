@@ -4,7 +4,9 @@ const Country = require('../models/country');
 exports.createCountry = async (req, res) => {
   try {
     const { name, code, isoCode, dialCode, currency } = req.body;
-    const image = req.file ? `/public/country/${req.file.filename}` : undefined;
+    // const image = req.file ? `/public/country/${req.file.filename}` : undefined;
+    const image = req.file ? req.file.path : null;
+
 
     if (!req.user?._id) {
       return res.status(401).json({ success: false, message: 'Authentication required.' });
@@ -65,7 +67,8 @@ exports.getCountryById = async (req, res) => {
 exports.updateCountry = async (req, res) => {
   try {
     const { name, code, isoCode, dialCode, currency } = req.body;
-    const image = req.file ? `/public/country/${req.file.filename}` : undefined;
+    // const image = req.file ? `/public/country/${req.file.filename}` : undefined;
+    const image = req.file ? req.file.path : null;
 
     if (!req.user?._id) {
       return res.status(401).json({ success: false, message: 'Authentication required.' });

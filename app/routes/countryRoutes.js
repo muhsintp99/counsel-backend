@@ -1,7 +1,9 @@
 const express = require('express');
 const router = express.Router();
 const countryController = require('../Controllers/countryController');
-const createUpload = require('../middlewares/upload');
+// const createUpload = require('../middlewares/upload');
+const createUpload = require('../middlewares/cloudinaryUpload');
+
 const { requireSignIn, isAdminOrLicensee } = require('../middlewares/authMiddleware');
 
 // Upload middleware for "gallery" folder

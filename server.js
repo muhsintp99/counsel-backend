@@ -137,14 +137,45 @@ app.use(rateLimit({
 }));
 
 // Static file serving (this is good structure)
-const staticFolders = [
-  'defult', 'users', 'Images', 'blog', 'gallery',
-  'service', 'college', 'courses', 'country'
-];
+// const staticFolders = [
+//   'defult', 'users', 'Images', 'blog', 'gallery',
+//   'service', 'college', 'courses', 'country'
+// ];
 
-staticFolders.forEach(folder => {
-  app.use(`/public/${folder}`, express.static(path.join(__dirname, `public/${folder}`)));
+// staticFolders.forEach(folder => {
+//   app.use(`/public/${folder}`, express.static(path.join(__dirname, `public/${folder}`)));
+// });
+
+app.use('/cloudinary', require('./app/routes/createCloudinaryUpload'));
+
+
+// Store SSE clients
+const sseClients = new Set();
+
+// SSE endpoint for streaming new enquiries
+app.get('/api/enquiries/stream', (req, res) => {
+    res.setHeader('Content-Type', 'text/event-stream');
+    res.setHeader('Cache-Control', 'no-cache');
+    res.setHeader('Connection', 'keep-alive');
+    res.flushHeaders();
+
+    sseClients.add(res);
+
+    // Send keep-alive every 30 seconds
+    const keepAlive = setInterval(() => {
+        res.write(':keep-alive\n\n');
+    }, 30000);
+
+    // Remove client on close
+    req.on('close', () => {
+        sseClients.delete(res);
+        clearInterval(keepAlive);
+        res.end();
+    });
 });
+
+// Make sseClients available to controllers
+app.set('sseClients', sseClients);
 
 // Default route
 app.get('/', (req, res) => {

@@ -31,7 +31,8 @@
 const express = require('express');
 const router = express.Router();
 const collegeController = require('../Controllers/collegeController');
-const createUpload = require('../middlewares/upload');
+// const createUpload = require('../middlewares/upload');
+const createUpload = require('../middlewares/cloudinaryUpload');
 
 // Create upload middleware for college images
 const uploadCollegeImage = createUpload('college');
