@@ -41,7 +41,7 @@ const createUpload= require('../middlewares/cloudinaryUpload');
 const { requireSignIn } = require('../middlewares/authMiddleware');
 
 // Upload middleware for "gallery" folder
-const uploadGalleryImage = createUpload('gallery');
+const uploadGalleryImage = createUpload.createUpload('gallery');
 
 // Routes
 router.post('/', (req, res, next) => {

@@ -6,7 +6,7 @@ const { requireSignIn, isAdmin, isLicensee, isSelfOrAdmin } = require("../middle
 // const createUpload = require('../middlewares/upload');
 const createUpload = require('../middlewares/cloudinaryUpload');
 
-const uploadUsersImage = createUpload('users');
+const uploadUsersImage = createUpload.createUpload('users');
 
 /**
  * @route POST /users

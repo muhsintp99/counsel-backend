@@ -36,6 +36,9 @@ const countrySchema = new mongoose.Schema({
     required: true,
     uppercase: true
   },
+  publicId: {
+    type: String
+  },
   isDomestic: {
     type: Boolean,
     default: false

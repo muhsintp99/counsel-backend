@@ -5,7 +5,7 @@ const blogController = require('../Controllers/blogController');
 const createUpload = require('../middlewares/cloudinaryUpload');
 const { requireSignIn, isAdminOrLicensee } = require('../middlewares/authMiddleware');
 
-const uploadBlogImage = createUpload('blog');
+const uploadBlogImage = createUpload.createUpload('blog');
 
 // Create blog with image - only Admin or Licensee
 router.post(

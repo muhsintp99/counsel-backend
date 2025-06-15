@@ -1,25 +1,17 @@
 const Country = require('../models/country');
+const { v2: cloudinary } = require('cloudinary');
 
 // Create a new country
 exports.createCountry = async (req, res) => {
   try {
     const { name, code, isoCode, dialCode, currency } = req.body;
-    // const image = req.file ? `/public/country/${req.file.filename}` : undefined;
-    const image = req.file ? req.file.path : null;
 
+    const image = req.file ? req.file.path : null;
+    const publicId = req.file ? req.file.filename : null;
 
     if (!req.user?._id) {
       return res.status(401).json({ success: false, message: 'Authentication required.' });
     }
-
-    // Define allowed fields, excluding isDomestic and isDefault
-    // const allowedFields = ['name', 'code', 'isoCode', 'dialCode', 'currency'];
-    // const filteredBody = {};
-    // allowedFields.forEach(field => {
-    //   if (req.body[field] !== undefined) {
-    //     filteredBody[field] = req.body[field];
-    //   }
-    // });
 
     const newCountry = new Country({
       name,
@@ -28,12 +20,13 @@ exports.createCountry = async (req, res) => {
       dialCode,
       currency,
       image,
+      publicId,
       createdBy: req.user._id,
       updatedBy: req.user._id
     });
 
     const savedCountry = await newCountry.save();
-    res.status(201).json({ success: true,message: ' Create Successfully!', data: savedCountry });
+    res.status(201).json({ success: true, message: ' Create Successfully!', data: savedCountry });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
@@ -67,8 +60,9 @@ exports.getCountryById = async (req, res) => {
 exports.updateCountry = async (req, res) => {
   try {
     const { name, code, isoCode, dialCode, currency } = req.body;
-    // const image = req.file ? `/public/country/${req.file.filename}` : undefined;
+
     const image = req.file ? req.file.path : null;
+    const publicId = req.file ? req.file.filename : null;
 
     if (!req.user?._id) {
       return res.status(401).json({ success: false, message: 'Authentication required.' });
@@ -85,6 +79,7 @@ exports.updateCountry = async (req, res) => {
 
     if (image) {
       updatedFields.image = image;
+      updatedFields.publicId = publicId;
     }
 
     const updatedCountry = await Country.findByIdAndUpdate(
@@ -97,7 +92,7 @@ exports.updateCountry = async (req, res) => {
       return res.status(404).json({ success: false, message: 'Country not found' });
     }
 
-    res.json({ success: true, message: 'Update Successfully!',data: updatedCountry });
+    res.json({ success: true, message: 'Update Successfully!', data: updatedCountry });
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
@@ -117,13 +112,24 @@ exports.getCountryCount = async (req, res) => {
 // Hard delete country
 exports.deleteCountry = async (req, res) => {
   try {
-    const deleted = await Country.findByIdAndDelete(req.params.id);
+    const country = await Country.findById(req.params.id);
 
-    if (!deleted) {
+    if (!country) {
       return res.status(404).json({ success: false, message: 'Country not found' });
     }
 
-    res.json({ success: true, message: 'Country permanently deleted', data: deleted });
+    if (country.publicId) {
+      await cloudinary.uploader.destroy(country.publicId);
+    }
+
+    await Country.findByIdAndDelete(req.params.id);
+
+    res.json({
+      success: true,
+      message: 'Country permanently deleted',
+      data: country
+    });
+
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

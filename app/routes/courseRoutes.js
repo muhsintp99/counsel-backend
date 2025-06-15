@@ -7,7 +7,7 @@ const createUpload = require('../middlewares/cloudinaryUpload');
 
 const { requireSignIn, isAdminOrLicensee } = require('../middlewares/authMiddleware');
 
-const uploadCoursesImage = createUpload('courses');
+const uploadCoursesImage = createUpload.createUpload('courses');
 
 // Create
 router.post('/',

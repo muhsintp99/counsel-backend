@@ -6,8 +6,7 @@ const createUpload = require('../middlewares/cloudinaryUpload');
 
 const { requireSignIn, isAdminOrLicensee } = require('../middlewares/authMiddleware');
 
-// Upload middleware for "gallery" folder
-const uploadCountryImage = createUpload('country');
+const uploadCountryImage = createUpload.createUpload('country');
 
 router.post('/', (req, res, next) => {
     uploadCountryImage(req, res, err => {
@@ -18,7 +17,7 @@ router.post('/', (req, res, next) => {
 
 router.get('/', countryController.getAllCountries);
 
-router.get('/count', countryController.getCountryCount); // ✅ Add this before '/:id'
+router.get('/count', countryController.getCountryCount);
 
 
 router.get('/:id', countryController.getCountryById);

@@ -4,8 +4,7 @@ const serviceController = require('../Controllers/serviceController');
 // const createUpload = require('../middlewares/upload');
 const createUpload = require('../middlewares/cloudinaryUpload');
 
-// Initialize multer with folder name 'service'
-const uploadServiceImage = createUpload('service');
+const uploadServiceImage = createUpload.createUpload('service');
 
 // Routes
 router.post('/', (req, res, next) => {

@@ -1,4 +1,6 @@
 const College = require('../models/college');
+const Country = require('../models/country');
+
 
 // Helper function to safely parse JSON
 const safeParseJSON = (value, defaultValue = []) => {
@@ -81,7 +83,7 @@ exports.createCollege = async (req, res) => {
 // Get all colleges
 exports.getColleges = async (req, res) => {
   try {
-    const { page = 1, limit = 10, search, category, status, country } = req.query;
+    const { page = 1, limit = 10, search, category, status, domestic } = req.query;
 
     // Build filter object
     const filter = { isDeleted: false };
@@ -96,7 +98,13 @@ exports.getColleges = async (req, res) => {
 
     if (category) filter.category = category;
     if (status) filter.status = status;
-    if (country) filter.country = country;
+
+    if (domestic === 'true' || domestic === 'false') {
+      const isDomesticValue = domestic === 'true';
+      const countryDocs = await Country.find({ isDomestic: isDomesticValue, isDeleted: false }).select('_id');
+      const countryIds = countryDocs.map(c => c._id);
+      filter.country = { $in: countryIds };
+    }
 
     const colleges = await College.find(filter)
       .populate({
@@ -116,10 +124,10 @@ exports.getColleges = async (req, res) => {
     const total = await College.countDocuments(filter);
 
     res.json({
-      colleges,
+      total,
       totalPages: Math.ceil(total / limit),
       currentPage: page,
-      total
+      colleges
     });
   } catch (err) {
     console.error('Get colleges error:', err);

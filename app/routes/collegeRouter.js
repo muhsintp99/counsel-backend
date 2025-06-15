@@ -35,7 +35,7 @@ const collegeController = require('../Controllers/collegeController');
 const createUpload = require('../middlewares/cloudinaryUpload');
 
 // Create upload middleware for college images
-const uploadCollegeImage = createUpload('college');
+const uploadCollegeImage = createUpload.createUpload('college');
 
 // Handle image upload middleware
 const handleImageUpload = (req, res, next) => {
