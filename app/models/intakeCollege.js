@@ -28,6 +28,10 @@ const intakeSchema = new mongoose.Schema(
       enum: ['open', 'closed'],
       default: 'open',
     },
+    isDomestic: {
+      type: Boolean,
+      default: true,
+    },
     visible: {
       type: Boolean,
       default: true,

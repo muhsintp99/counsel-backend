@@ -55,7 +55,7 @@ const collegeSchema = new mongoose.Schema({
         type: String
     }],
     map: {
-        type: String // store Google Maps embed link or coordinates string
+        type: String
     },
     visible: {
         type: Boolean,

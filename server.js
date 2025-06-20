@@ -91,6 +91,7 @@ app.use('/followUp', require('./app/routes/followUp'));
 app.use('/countries', require('./app/routes/countryRoutes'));
 app.use('/courses', require('./app/routes/courseRoutes'));
 app.use('/college', require('./app/routes/collegeRouter'));
+app.use('/states', require('./app/routes/stateRoutes'));
 app.use('/intake', require('./app/routes/intakeRoutes'));
 app.use('/userProfile', require('./app/routes/userProfile'));
 app.use('/userroles', require('./app/routes/userRole'));

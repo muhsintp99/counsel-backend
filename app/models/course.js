@@ -60,6 +60,10 @@ const courseSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
+  isDomestic: {
+    type: Boolean,
+    default: true,
+  },
   isDeleted: {
     type: Boolean,
     default: false
