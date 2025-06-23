@@ -1,24 +1,22 @@
 const College = require('../models/college');
 const Country = require('../models/country');
 
-
-// Helper function to safely parse JSON
+// Safe JSON parser
 const safeParseJSON = (value, defaultValue = []) => {
   if (!value) return defaultValue;
   if (typeof value === 'string') {
     try {
       return JSON.parse(value);
     } catch (err) {
-      console.error(`JSON parse error for value: ${value}`, err);
+      console.error(`JSON parse error: ${value}`, err);
       return defaultValue;
     }
   }
-  // If value is already an array, return it as is
   if (Array.isArray(value)) return value;
   return defaultValue;
 };
 
-// Create a new college
+// Create college
 exports.createCollege = async (req, res) => {
   try {
     const {
@@ -27,11 +25,8 @@ exports.createCollege = async (req, res) => {
       visible, createdBy
     } = req.body;
 
-    // const image = req.file ? `/public/college/${req.file.filename}` : null;
-    const image = req.file ? req.file.path : null;
+    const image = req.file?.path || null;
 
-
-    // Check if college code already exists
     const existingCollege = await College.findOne({ code, isDeleted: false });
     if (existingCollege) {
       return res.status(400).json({ error: 'College code already exists' });
@@ -60,18 +55,9 @@ exports.createCollege = async (req, res) => {
 
     const saved = await newCollege.save();
 
-    // Populate the saved college before returning
     const populatedCollege = await College.findById(saved._id)
-      .populate({
-        path: 'country',
-        match: { isDeleted: false },
-        select: '-__v -createdBy -updatedBy -isDeleted -createdAt -updatedAt'
-      })
-      .populate({
-        path: 'courses',
-        match: { isDeleted: false },
-        select: '-__v -createdBy -updatedBy -isDeleted -createdAt -updatedAt'
-      });
+      .populate({ path: 'country', match: { isDeleted: false } })
+      .populate({ path: 'courses', match: { isDeleted: false } });
 
     res.status(201).json(populatedCollege);
   } catch (err) {
@@ -84,8 +70,6 @@ exports.createCollege = async (req, res) => {
 exports.getColleges = async (req, res) => {
   try {
     const { page = 1, limit = 10, search, category, status, domestic } = req.query;
-
-    // Build filter object
     const filter = { isDeleted: false };
 
     if (search) {
@@ -102,31 +86,22 @@ exports.getColleges = async (req, res) => {
     if (domestic === 'true' || domestic === 'false') {
       const isDomesticValue = domestic === 'true';
       const countryDocs = await Country.find({ isDomestic: isDomesticValue, isDeleted: false }).select('_id');
-      const countryIds = countryDocs.map(c => c._id);
-      filter.country = { $in: countryIds };
+      filter.country = { $in: countryDocs.map(c => c._id) };
     }
 
     const colleges = await College.find(filter)
-      .populate({
-        path: 'country',
-        match: { isDeleted: false },
-        select: '-__v -createdBy -updatedBy -isDeleted -createdAt -updatedAt'
-      })
-      .populate({
-        path: 'courses',
-        match: { isDeleted: false },
-        select: '-__v -createdBy -updatedBy -isDeleted -createdAt -updatedAt'
-      })
-      .limit(limit * 1)
-      .skip((page - 1) * limit)
-      .sort({ createdAt: -1 });
+      .populate({ path: 'country', match: { isDeleted: false } })
+      .populate({ path: 'courses', match: { isDeleted: false } })
+      .sort({ createdAt: -1 }) // Keep this for sorting by latest
+      .limit(parseInt(limit))
+      .skip((parseInt(page) - 1) * parseInt(limit));
 
     const total = await College.countDocuments(filter);
 
     res.json({
       total,
       totalPages: Math.ceil(total / limit),
-      currentPage: page,
+      currentPage: Number(page),
       colleges
     });
   } catch (err) {
@@ -139,20 +114,10 @@ exports.getColleges = async (req, res) => {
 exports.getCollegeById = async (req, res) => {
   try {
     const college = await College.findOne({ _id: req.params.id, isDeleted: false })
-      .populate({
-        path: 'country',
-        match: { isDeleted: false },
-        select: '-__v -createdBy -updatedBy -isDeleted -createdAt -updatedAt'
-      })
-      .populate({
-        path: 'courses',
-        match: { isDeleted: false },
-        select: '-__v -createdBy -updatedBy -isDeleted -createdAt -updatedAt'
-      });
+      .populate({ path: 'country', match: { isDeleted: false } })
+      .populate({ path: 'courses', match: { isDeleted: false } });
 
-    if (!college) {
-      return res.status(404).json({ error: 'College not found' });
-    }
+    if (!college) return res.status(404).json({ error: 'College not found' });
 
     res.json(college);
   } catch (err) {
@@ -170,11 +135,8 @@ exports.updateCollege = async (req, res) => {
       visible, updatedBy
     } = req.body;
 
-    // const image = req.file ? `/public/college/${req.file.filename}` : undefined;
-    const image = req.file ? req.file.path : undefined;
+    const image = req.file?.path;
 
-
-    // Check if college code already exists (excluding current college)
     if (code) {
       const existingCollege = await College.findOne({
         code,
@@ -211,19 +173,11 @@ exports.updateCollege = async (req, res) => {
       req.params.id,
       updateData,
       { new: true, runValidators: true }
-    ).populate({
-      path: 'country',
-      match: { isDeleted: false },
-      select: '-__v -createdBy -updatedBy -isDeleted -createdAt -updatedAt'
-    }).populate({
-      path: 'courses',
-      match: { isDeleted: false },
-      select: '-__v -createdBy -updatedBy -isDeleted -createdAt -updatedAt'
-    });
+    )
+      .populate({ path: 'country', match: { isDeleted: false } })
+      .populate({ path: 'courses', match: { isDeleted: false } });
 
-    if (!updated) {
-      return res.status(404).json({ error: 'College not found' });
-    }
+    if (!updated) return res.status(404).json({ error: 'College not found' });
 
     res.json(updated);
   } catch (err) {
@@ -241,40 +195,36 @@ exports.softDeleteCollege = async (req, res) => {
       { new: true }
     );
 
-    if (!deleted) {
-      return res.status(404).json({ error: 'College not found' });
-    }
+    if (!deleted) return res.status(404).json({ error: 'College not found' });
 
     res.json({ message: 'College soft deleted successfully', data: deleted });
   } catch (err) {
-    console.error('Soft delete college error:', err);
+    console.error('Soft delete error:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// Hard delete college
+// Hard delete
 exports.deleteCollege = async (req, res) => {
   try {
     const deleted = await College.findByIdAndDelete(req.params.id);
 
-    if (!deleted) {
-      return res.status(404).json({ error: "College not found" });
-    }
+    if (!deleted) return res.status(404).json({ error: 'College not found' });
 
     res.json({ message: 'College permanently deleted', data: deleted });
   } catch (err) {
-    console.error('Delete college error:', err);
+    console.error('Hard delete error:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// Get college count
+// Count
 exports.getCollegeCount = async (req, res) => {
   try {
     const count = await College.countDocuments({ isDeleted: false });
     res.json({ count });
   } catch (err) {
-    console.error('Get college count error:', err);
+    console.error('College count error:', err);
     res.status(500).json({ error: err.message });
   }
 };

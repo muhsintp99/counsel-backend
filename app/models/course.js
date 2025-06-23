@@ -1,4 +1,4 @@
-// course.js (no changes needed)
+// course.js
 const mongoose = require('mongoose');
 
 const courseSchema = new mongoose.Schema({
@@ -25,8 +25,9 @@ const courseSchema = new mongoose.Schema({
     required: true,
     validate: {
       validator: function (value) {
-        const allowed = ['Graduate', 'Postgraduate', 'Diploma', "PhD", 'other'];
-        return allowed.includes(value) || value.trim() !== '';
+        const allowed = ['Graduate', 'Postgraduate', 'Diploma', 'PhD', 'Other'];
+        const trimmed = value.trim();
+        return allowed.includes(trimmed) || trimmed !== '';
       },
       message: 'Invalid category'
     }
@@ -40,10 +41,6 @@ const courseSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  image: {
-    type: String,
-    default: '/public/default/folder.png'
-  },
   syllabus: {
     type: [String],
     default: []
@@ -56,25 +53,24 @@ const courseSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
-  visible: {
-    type: Boolean,
-    default: true
-  },
   isDomestic: {
     type: Boolean,
-    default: true,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  updatedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+  },
+  deletedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
   },
   isDeleted: {
     type: Boolean,
     default: false
-  },
-  createdBy: {
-    type: String,
-    default: 'admin'
-  },
-  updatedBy: {
-    type: String,
-    default: 'admin'
   }
 }, {
   timestamps: true

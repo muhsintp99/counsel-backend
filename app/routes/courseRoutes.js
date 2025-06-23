@@ -1,8 +1,7 @@
-// courseRoutes.js (no changes needed)
+// courseRoutes.js
 const express = require('express');
 const router = express.Router();
 const courseController = require('../Controllers/courseController');
-// const createUpload = require('../middlewares/upload');
 const createUpload = require('../middlewares/cloudinaryUpload');
 
 const { requireSignIn, isAdminOrLicensee } = require('../middlewares/authMiddleware');
@@ -15,7 +14,10 @@ router.post('/',
     isAdminOrLicensee,
     (req, res, next) => {
         uploadCoursesImage(req, res, err => {
-            if (err) return res.status(400).json({ error: err.message });
+            if (err) {
+                console.error('Upload error:', err);
+                return res.status(400).json({ error: err.message });
+            }
             next();
         });
     },
@@ -31,13 +33,16 @@ router.put('/:id',
     isAdminOrLicensee,
     (req, res, next) => {
         uploadCoursesImage(req, res, err => {
-            if (err) return res.status(400).json({ error: err.message });
+            if (err) {
+                console.error('Upload error:', err);
+                return res.status(400).json({ error: err.message });
+            }
             next();
         });
     },
     courseController.updateCourse);
 
-// Delete
+// Soft Delete
 router.delete('/:id', requireSignIn, isAdminOrLicensee, courseController.deleteCourse);
 
 module.exports = router;

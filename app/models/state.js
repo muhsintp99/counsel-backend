@@ -20,10 +20,6 @@ const stateSchema = new mongoose.Schema(
     desc: {
       type: String
     },
-    index: {
-      type: Number,
-      default: 1
-    },
     isActive: {
       type: Boolean,
       default: true

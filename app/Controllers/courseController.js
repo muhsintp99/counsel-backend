@@ -1,16 +1,13 @@
-// courseController.js (no changes needed)
+// courseController.js
 const Course = require('../models/course');
 
-// Create new course
 exports.createCourse = async (req, res) => {
   try {
-    // const image = req.file ? `/public/courses/${req.file.filename}` : null;
     const image = req.file ? req.file.path : null;
-
 
     const courseData = {
       ...req.body,
-      image, // set image path to course data
+      image,
       createdBy: req.user?.role || 'admin',
       updatedBy: req.user?.role || 'admin'
     };
@@ -24,39 +21,43 @@ exports.createCourse = async (req, res) => {
   }
 };
 
-// Get all courses
 exports.getAllCourses = async (req, res) => {
   try {
-    const visible = req.query.visible;
-    let filter = { isDeleted: false };
-    if (visible !== undefined) filter.visible = visible === 'true';
+    const isDomestic = req.query.domestic;
 
-    const courses = await Course.find(filter);
+    // Base filter
+    const filter = { isDeleted: false };
+
+    // Add isDomestic filter only if query is valid
+    if (isDomestic === 'true' || isDomestic === 'false') {
+      filter.isDomestic = isDomestic === 'true';
+    }
+
+    const courses = await Course.find(filter).sort({ createdAt: -1 });
     const count = await Course.countDocuments(filter);
 
-    res.json({ message: 'Courses fetched', data: courses, count });
+    res.json({ message: 'Courses fetched', count, data: courses });
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Get course by ID
+
 exports.getCourseById = async (req, res) => {
   try {
     const course = await Course.findById(req.params.id);
-    if (!course || course.isDeleted) return res.status(404).json({ message: 'Course not found' });
+    if (!course || course.isDeleted) {
+      return res.status(404).json({ message: 'Course not found' });
+    }
     res.json(course);
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 };
 
-// Update course
 exports.updateCourse = async (req, res) => {
   try {
-    // const image = req.file ? `/public/courses/${req.file.filename}` : undefined;
     const image = req.file ? req.file.path : null;
-
 
     const updatedData = {
       ...req.body,
@@ -83,16 +84,19 @@ exports.updateCourse = async (req, res) => {
   }
 };
 
-// Delete course
 exports.deleteCourse = async (req, res) => {
   try {
-    const deleted = await Course.findByIdAndDelete(req.params.id);
+    const course = await Course.findByIdAndUpdate(
+      req.params.id,
+      { $set: { isDeleted: true } },
+      { new: true }
+    );
 
-    if (!deleted) {
-      return res.status(404).json({ message: "Course not found" });
+    if (!course) {
+      return res.status(404).json({ message: 'Course not found' });
     }
 
-    res.json({ message: 'Course permanently deleted', data: deleted });
+    res.json({ message: 'Course deleted', data: course });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

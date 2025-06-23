@@ -18,7 +18,8 @@ function createUpload(folderName) {
       folder: folderName,
       allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
       transformation: [
-        { width: 800, height: 800, crop: 'limit' }
+        // { width: 800, height: 800, crop: 'limit' }
+        { width: 900, height: 600, crop: 'fill', gravity: 'auto' }
       ]
     }
   });

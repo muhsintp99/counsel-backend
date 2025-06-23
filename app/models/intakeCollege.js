@@ -19,6 +19,14 @@ const intakeSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    country: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Country',
+    },
+    state: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'State',
+    },
     deadlineDate: {
       type: Date,
       required: true,
@@ -30,11 +38,6 @@ const intakeSchema = new mongoose.Schema(
     },
     isDomestic: {
       type: Boolean,
-      default: true,
-    },
-    visible: {
-      type: Boolean,
-      default: true,
     },
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,

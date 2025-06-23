@@ -34,6 +34,10 @@ const collegeSchema = new mongoose.Schema({
         ref: 'Country',
         required: true,
     },
+    state: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'State',
+    },
     courses: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: 'Course',
@@ -76,12 +80,6 @@ const collegeSchema = new mongoose.Schema({
 }, {
     timestamps: true
 });
-
-// Add indexes for better query performance
-collegeSchema.index({ code: 1 });
-collegeSchema.index({ country: 1 });
-collegeSchema.index({ isDeleted: 1 });
-collegeSchema.index({ visible: 1 });
 
 const College = mongoose.model('College', collegeSchema);
 module.exports = College;
