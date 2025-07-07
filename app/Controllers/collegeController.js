@@ -1,5 +1,7 @@
 const College = require('../models/college');
 const Country = require('../models/country');
+const path = require('path');
+const fs = require('fs');
 
 // Safe JSON parser
 const safeParseJSON = (value, defaultValue = []) => {
@@ -22,10 +24,10 @@ exports.createCollege = async (req, res) => {
     const {
       name, code, email, phone, address, website, desc, map,
       category, status, facilities, services, country, courses,
-      visible, createdBy
+      visible
     } = req.body;
 
-    const image = req.file?.path || null;
+    const image = req.file ? `/public/college/${req.file.filename}` : '/public/default/picture.png';
 
     const existingCollege = await College.findOne({ code, isDeleted: false });
     if (existingCollege) {
@@ -49,8 +51,6 @@ exports.createCollege = async (req, res) => {
       country,
       image,
       visible: visible !== undefined ? (typeof visible === 'string' ? JSON.parse(visible) : visible) : true,
-      createdBy: createdBy || 'admin',
-      updatedBy: createdBy || 'admin'
     });
 
     const saved = await newCollege.save();
@@ -59,7 +59,13 @@ exports.createCollege = async (req, res) => {
       .populate({ path: 'country', match: { isDeleted: false } })
       .populate({ path: 'courses', match: { isDeleted: false } });
 
-    res.status(201).json(populatedCollege);
+    res.status(201).json({
+      success: true,
+      data: {
+        ...populatedCollege.toObject(),
+        image: `${req.protocol}://${req.get('host')}${populatedCollege.image}`
+      }
+    });
   } catch (err) {
     console.error('Create college error:', err);
     res.status(500).json({ error: err.message });
@@ -92,17 +98,22 @@ exports.getColleges = async (req, res) => {
     const colleges = await College.find(filter)
       .populate({ path: 'country', match: { isDeleted: false } })
       .populate({ path: 'courses', match: { isDeleted: false } })
-      .sort({ createdAt: -1 }) // Keep this for sorting by latest
+      .sort({ createdAt: -1 })
       .limit(parseInt(limit))
       .skip((parseInt(page) - 1) * parseInt(limit));
 
     const total = await College.countDocuments(filter);
 
+    const result = colleges.map(c => ({
+      ...c.toObject(),
+      image: `${req.protocol}://${req.get('host')}${c.image}`
+    }));
+
     res.json({
       total,
       totalPages: Math.ceil(total / limit),
       currentPage: Number(page),
-      colleges
+      colleges: result
     });
   } catch (err) {
     console.error('Get colleges error:', err);
@@ -119,7 +130,10 @@ exports.getCollegeById = async (req, res) => {
 
     if (!college) return res.status(404).json({ error: 'College not found' });
 
-    res.json(college);
+    res.json({
+      ...college.toObject(),
+      image: `${req.protocol}://${req.get('host')}${college.image}`
+    });
   } catch (err) {
     console.error('Get college by ID error:', err);
     res.status(500).json({ error: err.message });
@@ -132,11 +146,15 @@ exports.updateCollege = async (req, res) => {
     const {
       name, code, email, phone, address, website, desc, map,
       category, status, facilities, services, country, courses,
-      visible, updatedBy
+      visible
     } = req.body;
 
-    const image = req.file?.path;
+    const college = await College.findById(req.params.id);
+    if (!college || college.isDeleted) {
+      return res.status(404).json({ error: 'College not found' });
+    }
 
+    // Check duplicate code
     if (code) {
       const existingCollege = await College.findOne({
         code,
@@ -145,6 +163,14 @@ exports.updateCollege = async (req, res) => {
       });
       if (existingCollege) {
         return res.status(400).json({ error: 'College code already exists' });
+      }
+    }
+
+    // Delete old image if new one uploaded
+    if (req.file && college.image && college.image !== '/public/default/picture.png') {
+      const oldImagePath = path.join(__dirname, '../../', college.image);
+      if (fs.existsSync(oldImagePath)) {
+        fs.unlinkSync(oldImagePath);
       }
     }
 
@@ -164,10 +190,9 @@ exports.updateCollege = async (req, res) => {
       ...(courses && { courses: safeParseJSON(courses) }),
       ...(country && { country }),
       ...(visible !== undefined && { visible: typeof visible === 'string' ? JSON.parse(visible) : visible }),
-      updatedBy: updatedBy || 'admin'
     };
 
-    if (image) updateData.image = image;
+    if (req.file) updateData.image = `/public/college/${req.file.filename}`;
 
     const updated = await College.findByIdAndUpdate(
       req.params.id,
@@ -177,16 +202,20 @@ exports.updateCollege = async (req, res) => {
       .populate({ path: 'country', match: { isDeleted: false } })
       .populate({ path: 'courses', match: { isDeleted: false } });
 
-    if (!updated) return res.status(404).json({ error: 'College not found' });
-
-    res.json(updated);
+    res.json({
+      success: true,
+      data: {
+        ...updated.toObject(),
+        image: `${req.protocol}://${req.get('host')}${updated.image}`
+      }
+    });
   } catch (err) {
     console.error('Update college error:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// Soft delete college
+// Soft delete
 exports.softDeleteCollege = async (req, res) => {
   try {
     const deleted = await College.findByIdAndUpdate(
@@ -204,21 +233,29 @@ exports.softDeleteCollege = async (req, res) => {
   }
 };
 
-// Hard delete
+// Hard delete college
 exports.deleteCollege = async (req, res) => {
   try {
-    const deleted = await College.findByIdAndDelete(req.params.id);
+    const college = await College.findById(req.params.id);
+    if (!college) return res.status(404).json({ error: 'College not found' });
 
-    if (!deleted) return res.status(404).json({ error: 'College not found' });
+    if (college.image && college.image !== '/public/default/picture.png') {
+      const imagePath = path.join(__dirname, '../../', college.image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
 
-    res.json({ message: 'College permanently deleted', data: deleted });
+    await College.findByIdAndDelete(req.params.id);
+
+    res.json({ message: 'College permanently deleted', data: college });
   } catch (err) {
     console.error('Hard delete error:', err);
     res.status(500).json({ error: err.message });
   }
 };
 
-// Count
+// Get total college count
 exports.getCollegeCount = async (req, res) => {
   try {
     const count = await College.countDocuments({ isDeleted: false });

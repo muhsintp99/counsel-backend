@@ -8,8 +8,6 @@ exports.createCourse = async (req, res) => {
     const courseData = {
       ...req.body,
       image,
-      createdBy: req.user?.role || 'admin',
-      updatedBy: req.user?.role || 'admin'
     };
 
     const course = new Course(courseData);
@@ -61,7 +59,6 @@ exports.updateCourse = async (req, res) => {
 
     const updatedData = {
       ...req.body,
-      updatedBy: req.user?.role || 'admin',
     };
 
     if (image !== undefined) {

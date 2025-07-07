@@ -70,12 +70,12 @@ const collegeSchema = new mongoose.Schema({
         default: false,
     },
     createdBy: {
-        type: String,
-        default: 'admin'
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
     },
     updatedBy: {
-        type: String,
-        default: 'admin'
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
     }
 }, {
     timestamps: true

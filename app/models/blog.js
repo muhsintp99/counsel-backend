@@ -26,11 +26,19 @@ const blogSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    createdBy: { type: String, default: 'admin' },
-    updatedBy: { type: String, default: 'admin' }
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    },
+    updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'User',
+        required: true
+    }
 }, { timestamps: true });
 
-blogSchema.index({createdAt: 1});
+blogSchema.index({ createdAt: 1 });
 // blogSchema.index({ isDeleted: 1 });
 
 

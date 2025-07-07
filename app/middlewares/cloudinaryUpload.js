@@ -2,6 +2,7 @@ const multer = require('multer');
 const { v2: cloudinary } = require('cloudinary');
 const { CloudinaryStorage } = require('multer-storage-cloudinary');
 const dotenv = require('dotenv');
+const path = require('path');
 
 dotenv.config();
 
@@ -18,7 +19,6 @@ function createUpload(folderName) {
       folder: folderName,
       allowed_formats: ['jpg', 'jpeg', 'png', 'gif'],
       transformation: [
-        // { width: 800, height: 800, crop: 'limit' }
         { width: 900, height: 600, crop: 'fill', gravity: 'auto' }
       ]
     }
@@ -26,11 +26,24 @@ function createUpload(folderName) {
 
   return multer({
     storage,
-    limits: { fileSize: 5 * 1024 * 1024 }
+    limits: { fileSize: 5 * 1024 * 1024 } // 5MB
   }).single('image');
+}
+
+async function uploadDefaultImage(localPath, folderName = 'default') {
+  const absolutePath = path.resolve(localPath); // ✅ Now it works
+  const result = await cloudinary.uploader.upload(absolutePath, {
+    folder: folderName,
+    transformation: [{ width: 800, height: 800, crop: 'limit' }]
+  });
+  return {
+    url: result.secure_url,
+    publicId: result.public_id
+  };
 }
 
 module.exports = {
   createUpload,
-  cloudinary
+  cloudinary,
+  uploadDefaultImage
 };
