@@ -116,6 +116,8 @@ router.put(
 
 // ✅ Soft delete user (admin only)
 router.patch('/:id/delete', requireSignIn, isAdmin, UserController.softDelete);
+// ✅ Soft delete user (admin only)
+router.delete('/hard-delete/:id', requireSignIn, isAdmin, UserController.hardDelete);
 
 // ✅ Reactivate soft-deleted user
 router.patch('/:id/reactivate', requireSignIn, isAdmin, UserController.reactivateUser);

@@ -372,6 +372,52 @@ exports.softDelete = async (req, res) => {
   }
 };
 
+// HARD DELETE USER
+exports.hardDelete = async (req, res) => {
+  try {
+    const userId = req.params.id;
+
+    if (req.user._id.toString() === userId) {
+      return res.status(400).send({
+        success: false,
+        message: "You cannot delete your own account"
+      });
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).send({
+        success: false,
+        message: "User not found"
+      });
+    }
+
+    // Delete profile image if not default
+    if (user.image && user.image !== '/public/default/picture.png') {
+      const imagePath = path.join(__dirname, '../../', user.image);
+      if (fs.existsSync(imagePath)) {
+        fs.unlinkSync(imagePath);
+      }
+    }
+
+    await User.findByIdAndDelete(userId);
+
+    res.status(200).send({
+      success: true,
+      message: "User permanently deleted"
+    });
+
+  } catch (error) {
+    console.error('Hard Delete User Error:', error);
+    res.status(500).send({
+      success: false,
+      message: "Error in hard deleting user",
+      error: error.message
+    });
+  }
+};
+
+
 // REACTIVATE USER
 exports.reactivateUser = async (req, res) => {
   try {
