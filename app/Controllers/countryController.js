@@ -143,16 +143,16 @@ const path = require('path');
 // Helper to create full image URL
 const formatImageUrl = (req, imagePath) => {
   if (!imagePath) return null;
-  const baseUrl = `${req.protocol}://${req.get('host')}`;
-  return `${baseUrl}${imagePath}`;
+  return `${req.protocol}://${req.get('host')}${imagePath}`;
 };
+
 
 // Create a new country
 exports.createCountry = async (req, res) => {
   try {
     const { name, code, isoCode, dialCode, currency } = req.body;
 
-    const image = req.file ? `/public/country/${req.file.filename}` : '/public/defult/picture.png';
+    const image = req.file ? `/public/country/${req.file.filename}` : '/public/default/picture.png';
 
     const newCountry = new Country({
       name,
@@ -166,16 +166,21 @@ exports.createCountry = async (req, res) => {
     });
 
     const savedCountry = await newCountry.save();
-    const dataWithImageUrl = {
-      ...savedCountry.toObject(),
-      image: formatImageUrl(req, savedCountry.image)
-    };
 
-    res.status(201).json({ success: true, message: 'Created successfully', data: dataWithImageUrl });
+    res.status(201).json({
+      success: true,
+      message: 'Created successfully',
+      data: {
+        ...savedCountry.toObject(),
+        image: formatImageUrl(req, savedCountry.image)
+      }
+    });
+
   } catch (err) {
     res.status(400).json({ success: false, error: err.message });
   }
 };
+
 
 // Get all countries
 exports.getAllCountries = async (req, res) => {
@@ -217,32 +222,29 @@ exports.getCountryById = async (req, res) => {
 exports.updateCountry = async (req, res) => {
   try {
     const { name, code, isoCode, dialCode, currency } = req.body;
-
     const country = await Country.findById(req.params.id);
 
     if (!country || country.isDeleted) {
       return res.status(404).json({ success: false, message: 'Country not found' });
     }
 
-    // If new image is uploaded and old image is not default → delete the old image file
-    if (req.file && country.image && country.image !== '/public/defult/picture.png') {
+    // Delete old image if a new one is uploaded
+    if (req.file && country.image && country.image !== '/public/default/picture.png') {
       const oldImagePath = path.join(__dirname, '../../', country.image);
       if (fs.existsSync(oldImagePath)) {
-        fs.unlinkSync(oldImagePath); // delete old image file
+        fs.unlinkSync(oldImagePath);
       }
     }
 
-    // Build updatedFields
     const updatedFields = {
       name,
       code,
       isoCode,
       dialCode,
       currency,
-      updatedBy: req.user?._id || 'admin',
+      updatedBy: req.user?._id || 'admin'
     };
 
-    // If new image uploaded, update image path
     if (req.file) {
       updatedFields.image = `/public/country/${req.file.filename}`;
     }
@@ -253,17 +255,12 @@ exports.updateCountry = async (req, res) => {
       { new: true, runValidators: true }
     );
 
-    const formatImageUrl = (imagePath) => {
-      const baseUrl = `${req.protocol}://${req.get('host')}`;
-      return `${baseUrl}${imagePath}`;
-    };
-
     res.json({
       success: true,
       message: 'Updated successfully',
       data: {
         ...updatedCountry.toObject(),
-        image: formatImageUrl(updatedCountry.image),
+        image: formatImageUrl(req, updatedCountry.image)
       }
     });
 
@@ -271,6 +268,7 @@ exports.updateCountry = async (req, res) => {
     res.status(400).json({ success: false, error: err.message });
   }
 };
+
 
 // Get total country count
 exports.getCountryCount = async (req, res) => {
