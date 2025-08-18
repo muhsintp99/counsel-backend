@@ -43,7 +43,7 @@ const collegeSchema = new mongoose.Schema({
         ref: 'Course',
     }],
     category: {
-        type: String,
+        type: [String],
         enum: ['Graduate', 'Postgraduate', 'Diploma', 'PhD'],
         default: 'Graduate'
     },
