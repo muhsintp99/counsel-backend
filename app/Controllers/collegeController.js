@@ -43,7 +43,7 @@ exports.createCollege = async (req, res) => {
       website,
       desc,
       map,
-      category,
+      category: safeParseJSON(category), // ✅ multiple categories
       status,
       facilities: safeParseJSON(facilities),
       services: safeParseJSON(services),
@@ -86,7 +86,10 @@ exports.getColleges = async (req, res) => {
       ];
     }
 
-    if (category) filter.category = category;
+    if (category) {
+      // ✅ check inside array
+      filter.category = { $in: Array.isArray(category) ? category : [category] };
+    }
     if (status) filter.status = status;
 
     if (domestic === 'true' || domestic === 'false') {
@@ -183,7 +186,7 @@ exports.updateCollege = async (req, res) => {
       ...(website !== undefined && { website }),
       ...(desc !== undefined && { desc }),
       ...(map !== undefined && { map }),
-      ...(category && { category }),
+      ...(category && { category: safeParseJSON(category) }), // ✅ multiple categories
       ...(status && { status }),
       ...(facilities && { facilities: safeParseJSON(facilities) }),
       ...(services && { services: safeParseJSON(services) }),
