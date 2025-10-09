@@ -225,7 +225,7 @@ app.set("sseClients", sseClients);
 
 // ======= Default Route =======
 app.get("/", (req, res) => {
-  res.json({ message: "Hello, Server Started in Myn Future" });
+  res.json({ message: "Hello, Server Started in Edspiria International" });
 });
 
 // ======= Routes =======
