@@ -265,7 +265,7 @@ exports.UpdateEnquiryStatus = async (req, res) => {
     }
     res.status(200).send({
       success: true,
-      // message: "Enquiry status updated to active",
+      // message: "Enquiry status updated to active ",
       enquiry,
     });
   } catch (error) {

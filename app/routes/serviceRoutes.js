@@ -1,31 +1,18 @@
 const express = require('express');
 const router = express.Router();
 const serviceController = require('../Controllers/serviceController');
-// const createUpload = require('../middlewares/upload');
-const createUpload = require('../middlewares/cloudinaryUpload');
 
-const uploadServiceImage = createUpload.createUpload('service');
+// CREATE
+router.post('/', serviceController.createService);
 
-// Routes
-router.post('/', (req, res, next) => {
-  uploadServiceImage(req, res, err => {
-    if (err) return res.status(400).json({ error: err.message });
-    next();
-  });
-}, serviceController.createService);
-
+// READ
 router.get('/', serviceController.getAllServices);
 router.get('/:id', serviceController.getServiceById);
 
-router.put('/:id', (req, res, next) => {
-  uploadServiceImage(req, res, err => {
-    if (err) return res.status(400).json({ error: err.message });
-    next();
-  });
-}, serviceController.updateService);
+// UPDATE
+router.put('/:id', serviceController.updateService);
 
-router.patch('/:id', serviceController.softDeleteService);
+// DELETE
 router.delete('/:id', serviceController.hardDeleteService);
-router.delete('/count', serviceController.totalServiceCount);
 
 module.exports = router;

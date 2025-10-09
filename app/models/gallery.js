@@ -62,23 +62,6 @@ const gallerySchema = new mongoose.Schema({
         required: true,
         default: '/public/defult/noimage.png'
     },
-    date: {
-        type: Date,
-        required: true
-        // No default value - must be provided
-    },
-    title: {
-        type: String,
-        required: true
-    },
-    from: {
-        type: String,
-        required: true
-    },
-    link: {
-        type: String,
-        required: true
-    },
     isDeleted: {
         type: Boolean,
         default: false
@@ -98,8 +81,7 @@ const gallerySchema = new mongoose.Schema({
 // Index for better query performance
 gallerySchema.index({ createdAt: -1 });
 gallerySchema.index({ isDeleted: 1 });
-gallerySchema.index({ date: -1 }); // Index for date field
+gallerySchema.index({ date: -1 });
 
 const Gallery = mongoose.model('Gallery', gallerySchema);
-
 module.exports = Gallery;

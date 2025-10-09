@@ -26,18 +26,10 @@ const blogSchema = new mongoose.Schema({
         type: Boolean,
         default: false
     },
-    createdBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-    },
-    updatedBy: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: 'User',
-    }
+    createdBy: { type: String, default: 'admin' },
+    updatedBy: { type: String, default: 'admin' }
 }, { timestamps: true });
 
-blogSchema.index({ createdAt: 1 });
-// blogSchema.index({ isDeleted: 1 });
-
+blogSchema.index({createdAt: 1});
 
 module.exports = mongoose.model('Blog', blogSchema);

@@ -1,452 +1,327 @@
-const User = require("../models/user");
-const { hashPassword, comparePassword } = require("../helpers/authHelper");
 const JWT = require('jsonwebtoken');
-const fs = require('fs');
-const path = require('path');
-const { sendWelcomeEmail } = require("../helpers/sendEmail");
+const User = require('../models/user');
+const { generateOTP, generateTokenExpiry } = require('../utils/otp');
+const { hashPassword, comparePassword } = require('../helpers/authHelper');
+const { sendWelcomeEmail, sendOTPEmail } = require('../helpers/sendEmail');
 
-// CREATE USER
-exports.CreateUserController = async (req, res) => {
-  try {
-    const { fname, lname, email, mobile, password, userType } = req.body;
-    const image = req.file ? `/public/users/${req.file.filename}` : '/public/default/picture.png';
+const userController = {
+  // Register User
+  async register(req, res) {
+    try {
+      const { fname, lname, email, mobile, password, userType } = req.body;
 
-    if (!fname || !lname || !email || !mobile || !password || !userType) {
-      return res.status(400).send({
-        success: false,
-        message: "All fields (fname, lname, email, mobile, password, userType) are required"
-      });
-    }
-
-    if (userType === 'licensee' && (!req.user || req.user.userType !== 'admin')) {
-      return res.status(403).send({
-        success: false,
-        message: "Only admins can create licensee users"
-      });
-    }
-
-    const existingUser = await User.findOne({ $or: [{ email }, { mobile }] });
-    if (existingUser) {
-      return res.status(409).send({
-        success: false,
-        message: "User with this email or mobile already exists"
-      });
-    }
-
-    // ✅ Store plain password for email before hashing
-    const plainPassword = password;
-    const hashedPassword = await hashPassword(plainPassword);
-
-    const user = await new User({
-      fname,
-      lname,
-      email,
-      mobile,
-      password: hashedPassword,
-      userType,
-      image,
-      status: 'new',
-      createdBy: req.user ? req.user._id : 'system',
-      updatedBy: req.user ? req.user._id : 'system',
-      isDeleted: false,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }).save();
-
-    // ✅ Send welcome email with plain password
-    await sendWelcomeEmail(email, fname, plainPassword);
-
-    const userData = user.toObject();
-    delete userData.password;
-
-    res.status(201).send({
-      success: true,
-      message: `Successfully created ${userType} user`,
-      user: {
-        ...userData,
-        image: `${req.protocol}://${req.get('host')}${userData.image}`
+      if (!email || !mobile || !password || !userType) {
+        return res.status(400).json({ success: false, message: 'All required fields must be provided' });
       }
-    });
 
-  } catch (error) {
-    console.error('Create User Error:', error);
-    res.status(500).send({
-      success: false,
-      message: "Error in creating user",
-      error: error.message
-    });
-  }
-};
-
-
-// LOGIN
-exports.loginController = async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.status(400).send({
-        success: false,
-        message: "Email and password are required"
-      });
-    }
-
-    const user = await User.findOne({ email });
-    if (!user || user.isDeleted) {
-      return res.status(404).send({
-        success: false,
-        message: user?.isDeleted ? 'Account is deactivated' : 'Email is not registered'
-      });
-    }
-
-    const match = await comparePassword(password, user.password);
-    if (!match) {
-      return res.status(401).send({
-        success: false,
-        message: 'Invalid password'
-      });
-    }
-
-    await User.findByIdAndUpdate(user._id, {
-      lastLogin: new Date(),
-      ftLogin: false
-    });
-
-    const token = JWT.sign(
-      {
-        _id: user._id,
-        userType: user.userType,
-        email: user.email
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: '7d' }
-    );
-
-    res.status(200).send({
-      success: true,
-      message: 'Login successful',
-      user: {
-        _id: user._id,
-        fname: user.fname,
-        lname: user.lname,
-        mobile: user.mobile,
-        email: user.email,
-        userType: user.userType,
-        status: user.status,
-        image: `${req.protocol}://${req.get('host')}${user.image}`
-      },
-      token
-    });
-
-  } catch (error) {
-    console.error('Login Error:', error);
-    res.status(500).send({
-      success: false,
-      message: 'Error in login',
-      error: error.message
-    });
-  }
-};
-
-// FORGOT PASSWORD
-exports.forgotPasswordController = async (req, res) => {
-  try {
-    const { email, mobile, newPassword } = req.body;
-    if (!email || !mobile || !newPassword) {
-      return res.status(400).send({
-        success: false,
-        message: "Email, mobile, and new password are required"
-      });
-    }
-
-    const user = await User.findOne({ email, mobile });
-    if (!user || user.isDeleted) {
-      return res.status(404).send({
-        success: false,
-        message: user?.isDeleted ? 'Account is deactivated' : 'User not found'
-      });
-    }
-
-    const hashed = await hashPassword(newPassword);
-    await User.findByIdAndUpdate(user._id, {
-      password: hashed,
-      updatedAt: new Date(),
-      updatedBy: 'self'
-    });
-
-    res.status(200).send({
-      success: true,
-      message: 'Password reset successful'
-    });
-
-  } catch (error) {
-    console.error('Forgot Password Error:', error);
-    res.status(500).send({
-      success: false,
-      message: "Error in password reset",
-      error: error.message
-    });
-  }
-};
-
-// CURRENT USER
-exports.currentUserController = async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id).select('-password');
-    if (!user || user.isDeleted) {
-      return res.status(404).send({
-        success: false,
-        message: user?.isDeleted ? 'Account is deactivated' : 'User not found'
-      });
-    }
-
-    res.status(200).send({
-      success: true,
-      message: "Current user details",
-      user: {
-        ...user.toObject(),
-        image: `${req.protocol}://${req.get('host')}${user.image}`
+      const existingUser = await User.findOne({ $or: [{ email }, { mobile }] });
+      if (existingUser) {
+        return res.status(400).json({ success: false, message: 'User already exists with this email or mobile' });
       }
-    });
 
-  } catch (error) {
-    console.error('Current User Error:', error);
-    res.status(500).send({
-      success: false,
-      message: "Error fetching current user",
-      error: error.message
-    });
-  }
-};
+      const fileName = req.file?.filename || 'user.png';
+      const folder = req.file ? 'users' : 'default';
+      const image = `${req.protocol}://${req.get('host')}/public/${folder}/${fileName}`;
 
-// UPDATE USER
-exports.UpdateUserController = async (req, res) => {
-  try {
-    const userId = req.params.id;
-    const user = await User.findById(userId);
-    if (!user || user.isDeleted) {
-      return res.status(404).send({
-        success: false,
-        message: user?.isDeleted ? 'Cannot update deactivated account' : 'User not found'
+      const hashedPassword = await hashPassword(password);
+
+      const user = await User.create({
+        fname,
+        lname,
+        email,
+        mobile,
+        password: hashedPassword,
+        userType,
+        image
       });
+
+      await sendWelcomeEmail(email, `${fname} ${lname}`);
+
+      const count = await User.countDocuments();
+
+      res.status(201).json({
+        success: true,
+        count,
+        message: 'User registered successfully',
+        user: {
+          _id: user._id,
+          email: user.email,
+          userType: user.userType,
+          mobile: user.mobile,
+          fname: user.fname,
+          lname: user.lname,
+          image: user.image
+        }
+      });
+    } catch (error) {
+      console.error('Register error:', error);
+      res.status(500).json({ success: false, message: 'Error in registration', error: error.message });
     }
+  },
 
-    // Handle image replacement
-    if (req.file && user.image && user.image !== '/public/default/picture.png') {
-      const oldImagePath = path.join(__dirname, '../../', user.image);
-      if (fs.existsSync(oldImagePath)) fs.unlinkSync(oldImagePath);
-    }
+  // Update User
+  async update(req, res) {
+    try {
+      const { fname, lname, email, mobile } = req.body;
+      const updateData = { fname, lname, email, mobile };
 
-    const updateData = {
-      ...req.body,
-      updatedAt: new Date(),
-      updatedBy: req.user?._id || 'system'
-    };
-
-    // Prevent unsafe updates
-    delete updateData.password;
-    delete updateData.userType;
-
-    if (req.file) {
-      updateData.image = `/public/users/${req.file.filename}`;
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
-      new: true,
-      runValidators: true
-    });
-
-    const userData = updatedUser.toObject();
-    delete userData.password;
-
-    res.status(200).send({
-      success: true,
-      message: 'User updated successfully',
-      user: {
-        ...userData,
-        image: `${req.protocol}://${req.get('host')}${userData.image}`
+      if (req.file) {
+        updateData.image = `${req.protocol}://${req.get('host')}/public/users/${req.file.filename}`;
       }
-    });
 
-  } catch (error) {
-    console.error('Update User Error:', error);
-    res.status(500).send({
-      success: false,
-      message: 'Error in updating the user',
-      error: error.message
-    });
-  }
-};
+      const user = await User.findByIdAndUpdate(
+        req.user._id,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      );
 
-// GET ALL USERS
-exports.GetAllUsersController = async (req, res) => {
-  try {
-    const users = await User.find({}).select('-password').sort({ createdAt: -1 });
-
-    const formattedUsers = users.map(user => ({
-      ...user.toObject(),
-      image: `${req.protocol}://${req.get('host')}${user.image}`
-    }));
-
-    res.status(200).send({
-      success: true,
-      message: "All users retrieved successfully",
-      count: formattedUsers.length,
-      users: formattedUsers
-    });
-
-  } catch (error) {
-    console.error('Get All Users Error:', error);
-    res.status(500).send({
-      success: false,
-      message: "Error in getting users",
-      error: error.message
-    });
-  }
-};
-
-// GET SINGLE USER
-exports.GetSingleUserController = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id).select('-password');
-    if (!user) {
-      return res.status(404).send({
-        success: false,
-        message: "User not found"
-      });
+      res.status(200).json({ success: true, message: 'User updated successfully', user });
+    } catch (error) {
+      console.error('Update user error:', error);
+      res.status(500).json({ success: false, message: 'Error updating user', error: error.message });
     }
+  },
 
-    res.status(200).send({
-      success: true,
-      message: "User retrieved successfully",
-      user: {
-        ...user.toObject(),
-        image: `${req.protocol}://${req.get('host')}${user.image}`
+  // Login User
+  async login(req, res) {
+    try {
+      const { email, password } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ success: false, message: 'Email and password are required' });
       }
-    });
 
-  } catch (error) {
-    console.error('Get Single User Error:', error);
-    res.status(500).send({
-      success: false,
-      message: "Error fetching user",
-      error: error.message
-    });
-  }
-};
-
-// SOFT DELETE USER
-exports.softDelete = async (req, res) => {
-  try {
-    const userId = req.params.id;
-
-    if (req.user._id.toString() === userId) {
-      return res.status(400).send({ success: false, message: "You cannot delete your own account" });
-    }
-
-    const user = await User.findById(userId);
-    if (!user || user.isDeleted) {
-      return res.status(404).send({ success: false, message: "User not found or already deleted" });
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(userId, {
-      isDeleted: true,
-      status: 'blocked',
-      updatedAt: new Date(),
-      updatedBy: req.user._id
-    }, { new: true }).select('-password');
-
-    res.status(200).send({
-      success: true,
-      message: "User deactivated successfully",
-      user: updatedUser
-    });
-
-  } catch (error) {
-    console.error('Soft Delete User Error:', error);
-    res.status(500).send({
-      success: false,
-      message: "Error in soft deleting user",
-      error: error.message
-    });
-  }
-};
-
-// HARD DELETE USER
-exports.hardDelete = async (req, res) => {
-  try {
-    const userId = req.params.id;
-
-    if (req.user._id.toString() === userId) {
-      return res.status(400).send({
-        success: false,
-        message: "You cannot delete your own account"
-      });
-    }
-
-    const user = await User.findById(userId);
-    if (!user) {
-      return res.status(404).send({
-        success: false,
-        message: "User not found"
-      });
-    }
-
-    // Delete profile image if not default
-    if (user.image && user.image !== '/public/default/picture.png') {
-      const imagePath = path.join(__dirname, '../../', user.image);
-      if (fs.existsSync(imagePath)) {
-        fs.unlinkSync(imagePath);
+      const user = await User.findOne({ email }).select('+password');
+      if (!user) {
+        return res.status(401).json({ success: false, message: 'Invalid credentials' });
       }
+
+      const isMatch = await comparePassword(password, user.password);
+      if (!isMatch) {
+        return res.status(401).json({ success: false, message: 'Invalid credentials' });
+      }
+
+      user.lastLogin = new Date();
+      await user.save();
+
+      const token = JWT.sign({ _id: user._id }, process.env.JWT_SECRET, { expiresIn: '7d' });
+
+      res.status(200).json({
+        success: true,
+        message: 'Login successful',
+        token,
+        user: {
+          _id: user._id,
+          email: user.email,
+          userType: user.userType,
+          fname: user.fname,
+          lname: user.lname,
+          image: user.image
+        }
+      });
+    } catch (error) {
+      console.error('Login error:', error);
+      res.status(500).json({ success: false, message: 'Error in login', error: error.message });
     }
+  },
 
-    await User.findByIdAndDelete(userId);
+  // Forgot Password
+  async forgotPassword(req, res) {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
 
-    res.status(200).send({
-      success: true,
-      message: "User permanently deleted"
-    });
+      const user = await User.findOne({ email });
+      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-  } catch (error) {
-    console.error('Hard Delete User Error:', error);
-    res.status(500).send({
-      success: false,
-      message: "Error in hard deleting user",
-      error: error.message
-    });
+      const otp = generateOTP();
+      const otpExpires = generateTokenExpiry();
+
+      user.resetPasswordToken = otp;
+      user.resetPasswordExpires = otpExpires;
+      await user.save();
+
+      await sendOTPEmail(email, user.fullName, otp);
+
+      res.status(200).json({ success: true, message: 'OTP sent to your email for password reset' });
+    } catch (error) {
+      console.error('Forgot password error:', error);
+      res.status(500).json({ success: false, message: 'Error in forgot password process', error: error.message });
+    }
+  },
+
+  // Reset Password
+  async resetPassword(req, res) {
+    try {
+      const { email, otp, newPassword } = req.body;
+      if (!email || !otp || !newPassword) {
+        return res.status(400).json({ success: false, message: 'Email, OTP, and new password are required' });
+      }
+
+      const user = await User.findOne({ email });
+      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+      if (user.resetPasswordToken !== otp || user.resetPasswordExpires < new Date()) {
+        return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+      }
+
+      user.password = await hashPassword(newPassword);
+      user.resetPasswordToken = null;
+      user.resetPasswordExpires = null;
+      await user.save();
+
+      res.status(200).json({ success: true, message: 'Password reset successfully' });
+    } catch (error) {
+      console.error('Reset password error:', error);
+      res.status(500).json({ success: false, message: 'Error resetting password', error: error.message });
+    }
+  },
+
+  // Send OTP
+  async sendOTP(req, res) {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ success: false, message: 'Email is required' });
+
+      const user = await User.findOne({ email });
+      if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+      const otp = generateOTP();
+      const otpExpires = generateTokenExpiry();
+
+      user.otp = otp;
+      user.otpExpires = otpExpires;
+      await user.save();
+
+      await sendOTPEmail(email, user.fullName, otp);
+
+      res.status(200).json({ success: true, message: 'OTP sent successfully to your email' });
+    } catch (error) {
+      console.error('Send OTP error:', error);
+      res.status(500).json({ success: false, message: 'Error sending OTP', error: error.message });
+    }
+  },
+
+  // Verify OTP
+  async verifyOTP(req, res) {
+    try {
+      const { email, otp } = req.body;
+      if (!email || !otp) {
+        return res.status(400).json({ success: false, message: 'Email and OTP are required' });
+      }
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      if (user.otp !== otp || user.otpExpires < new Date()) {
+        return res.status(400).json({ success: false, message: 'Invalid or expired OTP' });
+      }
+
+      user.otp = null;
+      user.otpExpires = null;
+      await user.save();
+
+      res.status(200).json({ success: true, message: 'OTP verified successfully' });
+    } catch (error) {
+      console.error('Verify OTP error:', error);
+      res.status(500).json({ success: false, message: 'Error verifying OTP', error: error.message });
+    }
+  },
+
+  // Get Current User
+  async current(req, res) {
+    try {
+      const user = await User.findById(req.user._id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      res.status(200).json({ success: true, user });
+    } catch (error) {
+      console.error('Current user error:', error);
+      res.status(500).json({ success: false, message: 'Error fetching current user', error: error.message });
+    }
+  },
+
+  // Delete User (Hard delete)
+  async delete(req, res) {
+    try {
+      const user = await User.findByIdAndDelete(req.params.id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      res.status(200).json({ success: true, message: 'User deleted successfully' });
+    } catch (error) {
+      console.error('Delete user error:', error);
+      res.status(500).json({ success: false, message: 'Error deleting user', error: error.message });
+    }
+  },
+
+  // Block User
+  async block(req, res) {
+    try {
+      const user = await User.findByIdAndUpdate(
+        req.params.id,
+        { $set: { status: 'blocked' } },
+        { new: true }
+      );
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      res.status(200).json({ success: true, message: 'User blocked successfully' });
+    } catch (error) {
+      console.error('Block user error:', error);
+      res.status(500).json({ success: false, message: 'Error blocking user', error: error.message });
+    }
+  },
+
+  // Reactivate User
+  async reactivate(req, res) {
+    try {
+      const user = await User.findByIdAndUpdate(
+        req.params.id,
+        { $set: { status: 'active' } },
+        { new: true }
+      );
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+
+      res.status(200).json({ success: true, message: 'User reactivated successfully' });
+    } catch (error) {
+      console.error('Reactivate user error:', error);
+      res.status(500).json({ success: false, message: 'Error reactivating user', error: error.message });
+    }
+  },
+
+  // Get All Users
+  async getAll(req, res) {
+    try {
+      const users = await User.find();
+      const counts = await User.countDocuments();
+      res.status(200).json({ success: true, counts, users });
+    } catch (error) {
+      console.error('Get all users error:', error);
+      res.status(500).json({ success: false, message: 'Error fetching users', error: error.message });
+    }
+  },
+
+  // Get User by ID
+  async getById(req, res) {
+    try {
+      const user = await User.findById(req.params.id);
+      if (!user) {
+        return res.status(404).json({ success: false, message: 'User not found' });
+      }
+      res.status(200).json({ success: true, user });
+    } catch (error) {
+      console.error('Get user by ID error:', error);
+      res.status(500).json({ success: false, message: 'Error fetching user', error: error.message });
+    }
   }
 };
 
-
-// REACTIVATE USER
-exports.reactivateUser = async (req, res) => {
-  try {
-    const userId = req.params.id;
-
-    const user = await User.findById(userId);
-    if (!user || !user.isDeleted) {
-      return res.status(404).send({ success: false, message: "User not found or not deleted" });
-    }
-
-    const updatedUser = await User.findByIdAndUpdate(userId, {
-      isDeleted: false,
-      status: 'active',
-      updatedAt: new Date(),
-      updatedBy: req.user._id
-    }, { new: true }).select('-password');
-
-    res.status(200).send({
-      success: true,
-      message: "User reactivated successfully",
-      user: updatedUser
-    });
-
-  } catch (error) {
-    console.error('Reactivate User Error:', error);
-    res.status(500).send({
-      success: false,
-      message: "Error reactivating user",
-      error: error.message
-    });
-  }
-};
+module.exports = userController;

@@ -1,55 +1,53 @@
-const mongoose = require('mongoose');
+const path = require('path');
+const fs = require('fs');
 const User = require('../models/user');
 const { hashPassword } = require('./authHelper');
 const { sendWelcomeEmail } = require('./sendEmail');
-const path = require('path');
-const fs = require('fs').promises;
+require('dotenv').config();
 
 const insertDefaultAdmin = async () => {
   try {
-    const existingAdmin = await User.findOne({ email: 'muhsintp.develop@gmail.com' });
-    if (existingAdmin) {
-      console.log(`👤 Admin user already exists: ${existingAdmin?.email}`);
+    const exists = await User.findOne({ email: 'muhsintp.develop@gmail.com' });
+    if (exists) {
+      console.log('👤 Admin already exists.');
       return;
     }
 
-    const imagePath = path.join(__dirname, '../../public/defult/AdminUser.png');
+    const fileName = 'logo.png';
+    const relPath = `/public/defult/${fileName}`;
 
-    try {
-      await fs.access(imagePath);
-    } catch (error) {
-      console.error('❌ Default image not found at:', imagePath);
-      throw new Error('Default Admin image file is missing');
+    const imagePath = path.join(__dirname, '../../public/defult', fileName);
+
+    if (!fs.existsSync(imagePath)) {
+      console.warn(`⚠️ Admin image not found at: ${imagePath}`);
+      return;
     }
 
-    const imageUrl = '/public/defult/AdminUser.png';
-    const plainPassword = '123456';
-    const hashedPassword = await hashPassword(plainPassword);
+    const baseUrl = process.env.BASE_URL || 'http://localhost:1010';
+    const fullImage = `${baseUrl}${relPath}`;
 
-    const adminUser = new User({
-      fname: 'muhsin',
-      lname: 'admin',
-      email: 'muhsintp.develop@gmail.com',
-      mobile: '8593856881',
+    const hashedPassword = await hashPassword('123456');
+
+    const admin = await User.create({
+      fname: 'edspiria',
+      lname: 'Indernational',
+      email: 'edspiria@gmail.com',
+      mobile: '8848241321',
       password: hashedPassword,
-      image: imageUrl,
       userType: 'admin',
-      status: 'active',
-      isDeleted: false,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      createdBy: 'system',
-      updatedBy: 'system'
+      image: fullImage
     });
 
-    await adminUser.save();
+    try {
+      await sendWelcomeEmail(admin.email, `${admin.fname} ${admin.lname}`);
+      console.log('✅ Welcome email sent to admin');
+    } catch (err) {
+      console.error('⚠️ Send welcome email error:', err);
+    }
 
-    await sendWelcomeEmail(adminUser.email, `${adminUser.fname} ${adminUser.lname}`, plainPassword);
-
-    console.log('👤 Default admin user created successfully with image and email sent');
-  } catch (error) {
-    console.error('❌ Error creating default admin:', error.message);
-    throw error;
+    console.log('✅ Default admin created');
+  } catch (err) {
+    console.error('❌ Error creating default admin:', err.message);
   }
 };
 

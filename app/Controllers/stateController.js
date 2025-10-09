@@ -4,9 +4,9 @@ const Country = require('../models/country');
 // Create State
 exports.createState = async (req, res) => {
   try {
-    const { name, code, desc, country, isActive } = req.body;
+    const { name, code, desc, country, isActive, recommend } = req.body;
 
-    // Validate country
+    // Validate country existence
     const countryExists = await Country.findById(country);
     if (!countryExists) {
       return res.status(404).json({ success: false, message: 'Country not found' });
@@ -17,119 +17,130 @@ exports.createState = async (req, res) => {
       code,
       desc,
       country,
-      isActive: isActive !== undefined ? isActive : true
+      isActive: isActive ?? true,
+      recommend: recommend ?? false
     });
 
     const saved = await state.save();
-
-    // Populate country after save
     const populated = await saved.populate('country', 'name code');
 
-    res.status(201).json({
+    return res.status(201).json({
       success: true,
       message: 'State created successfully!',
       data: populated
     });
   } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
+    console.error('❌ Create State Error:', error);
+    return res.status(400).json({ success: false, error: error.message });
   }
 };
 
 // Get All States
 exports.getAllStates = async (req, res) => {
   try {
-    const states = await State.find({ deletedAt: null })
+    // Fetch states with populated country field
+    const states = await State.find()
       .populate('country', 'name code')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    const total = await State.countDocuments({ deletedAt: null });
+    // Filter out entries where country is null (in case deleted country remains)
+    const filtered = states.filter((state) => state.country !== null);
 
-    res.json({ success: true, total, data: states });
+    return res.json({
+      success: true,
+      total: filtered.length,
+      data: filtered
+    });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ Get All States Error:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
 
-// Get State by ID
+// Get Single State
 exports.getStateById = async (req, res) => {
   try {
-    const state = await State.findOne({ _id: req.params.id, deletedAt: null })
+    const state = await State.findById(req.params.id)
       .populate('country', 'name code');
 
     if (!state) {
       return res.status(404).json({ success: false, message: 'State not found' });
     }
 
-    res.json({ success: true, data: state });
+    if (!state.country) {
+      return res.status(404).json({ success: false, message: 'Country data missing or deleted' });
+    }
+
+    return res.json({ success: true, data: state });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ Get State Error:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
 
 // Update State
 exports.updateState = async (req, res) => {
   try {
-    const { name, code, desc, country, isActive } = req.body;
+    const { name, code, desc, country, isActive, recommend } = req.body;
+
+    // Validate country if provided
+    if (country) {
+      const countryExists = await Country.findById(country);
+      if (!countryExists) {
+        return res.status(404).json({ success: false, message: 'Country not found' });
+      }
+    }
 
     const updated = await State.findByIdAndUpdate(
       req.params.id,
-      {
-        name,
-        code,
-        desc,
-        country,
-        isActive,
-        updatedAt: new Date()
-      },
+      { name, code, desc, country, isActive, recommend },
       { new: true, runValidators: true }
-    );
+    ).populate('country', 'name code');
 
     if (!updated) {
       return res.status(404).json({ success: false, message: 'State not found' });
     }
 
-    // Populate country after update
-    const populated = await updated.populate('country', 'name code');
-
-    res.json({
+    return res.json({
       success: true,
       message: 'State updated successfully!',
-      data: populated
+      data: updated
     });
   } catch (error) {
-    res.status(400).json({ success: false, error: error.message });
+    console.error('❌ Update State Error:', error);
+    return res.status(400).json({ success: false, error: error.message });
   }
 };
 
-// Soft Delete State
+// Delete State (Hard Delete)
 exports.deleteState = async (req, res) => {
   try {
-    const deleted = await State.findByIdAndDelete(
-      req.params.id,
-      { deletedAt: new Date() },
-      { new: true }
-    ).populate('country', 'name code'); // Populate country after delete
+    const deleted = await State.findByIdAndDelete(req.params.id)
+      .populate('country', 'name code');
 
     if (!deleted) {
       return res.status(404).json({ success: false, message: 'State not found' });
     }
 
-    res.json({
+    return res.json({
       success: true,
-      message: 'State deleted (soft)',
+      message: 'State deleted successfully!',
       data: deleted
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ Delete State Error:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
 
-// Get Total State Count
+// Get State Count
 exports.getStateCount = async (req, res) => {
   try {
-    const count = await State.countDocuments({ deletedAt: null });
-    res.json({ success: true, count });
+    const count = await State.countDocuments();
+    return res.json({ success: true, count });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    console.error('❌ State Count Error:', error);
+    return res.status(500).json({ success: false, error: error.message });
   }
 };
