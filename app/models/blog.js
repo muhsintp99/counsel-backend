@@ -16,11 +16,12 @@ const blogSchema = new mongoose.Schema({
     image: {
         type: String,
         required: true,
-        default: '/public/default/picture.png'
+        default: '/public/defult/picture.png'
     },
     link: {
         type: String,
-        unique: true,
+        unique: false,
+        default: null,
     },
     isDeleted: {
         type: Boolean,
@@ -30,6 +31,6 @@ const blogSchema = new mongoose.Schema({
     updatedBy: { type: String, default: 'admin' }
 }, { timestamps: true });
 
-blogSchema.index({createdAt: 1});
+blogSchema.index({ createdAt: 1 });
 
 module.exports = mongoose.model('Blog', blogSchema);

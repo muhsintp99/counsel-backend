@@ -101,7 +101,6 @@ const collegeSchema = new mongoose.Schema({
   },
   email: {
     type: String,
-    required: [true, 'Email is required'],
     lowercase: true,
     trim: true,
     unique: [true, 'Email must be unique']
