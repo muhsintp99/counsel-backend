@@ -144,7 +144,7 @@ const dotenv = require("dotenv").config();
 
 // Database connection & helpers
 const connectDB = require("./config/dbconfig");
-const seedDefaultIndiaCountry = require("./app/helpers/insertIndia");
+// const seedDefaultIndiaCountry = require("./app/helpers/insertIndia");
 const { insertDefaultAdmin } = require("./app/helpers/insertAdmin");
 
 const app = express();
